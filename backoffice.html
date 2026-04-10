@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Backoffice Vistorias</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+  
+  :root {
+    --bg: #f4f1ec;
+    --card: #ffffff;
+    --primary: #2d5a8e;
+    --primary-dark: #1e3d5f;
+    --accent: #c4883a;
+    --text: #1a1a2e;
+    --muted: #6b6b80;
+    --border: #e2dfd8;
+    --success: #2a7d4f;
+    --danger: #c0392b;
+    --radius: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white; padding: 18px 24px;
+  }
+  .header h1 { font-size: 20px; }
+  .header .sub { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+
+  .container { max-width: 700px; margin: 0 auto; padding: 20px 16px 60px; }
+
+  .card {
+    background: var(--card); border-radius: var(--radius); padding: 18px;
+    margin-bottom: 14px; border: 1px solid var(--border);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .card-title {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 1.5px; color: var(--muted); margin-bottom: 14px;
+  }
+
+  .form-group { margin-bottom: 12px; }
+  .form-label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+  .form-input, .form-select {
+    width: 100%; padding: 10px 12px; font-size: 14px; font-family: 'DM Sans', sans-serif;
+    border: 1.5px solid var(--border); border-radius: 8px; background: #f8f6f3;
+    outline: none; transition: border 0.2s;
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--primary); background: white; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .btn {
+    padding: 12px 20px; font-size: 14px; font-family: 'DM Sans', sans-serif;
+    font-weight: 600; border-radius: 8px; border: none; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;
+  }
+  .btn-whatsapp { background: #25D366; color: white; }
+  .btn-whatsapp:hover { background: #1da851; }
+  .btn-email { background: var(--primary); color: white; }
+  .btn-email:hover { background: var(--primary-dark); }
+  .btn-copy { background: var(--accent); color: white; }
+  .btn-copy:hover { background: #a8722e; }
+  .btn-secondary { background: #e8e5e0; color: var(--text); }
+  .btn-secondary:hover { background: #d5d0c8; }
+  .btn-danger { background: var(--danger); color: white; font-size: 12px; padding: 6px 12px; }
+  .btn-sm { font-size: 12px; padding: 8px 14px; }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
+  .link-box {
+    background: #e8e5e0; border-radius: 8px; padding: 10px 14px;
+    font-family: 'Consolas', monospace; font-size: 12px;
+    word-break: break-all; margin-top: 10px; min-height: 40px;
+    border: 1px solid var(--border);
+  }
+
+  .perito-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; background: #f8f6f3; border-radius: 8px;
+    margin-bottom: 6px; border: 1px solid var(--border); cursor: pointer;
+    transition: all 0.15s;
+  }
+  .perito-item:hover { border-color: var(--primary); background: #eef3fa; }
+  .perito-item.selected { border-color: var(--primary); background: #dce8f5; }
+  .perito-item .info { flex: 1; }
+  .perito-item .name { font-weight: 600; font-size: 14px; }
+  .perito-item .details { font-size: 12px; color: var(--muted); }
+
+  .add-perito-form { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .add-perito-form.show { display: block; }
+
+  .empresa-toggle { display: flex; gap: 8px; }
+  .empresa-opt {
+    flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 8px;
+    text-align: center; cursor: pointer; font-weight: 600; font-size: 13px;
+    transition: all 0.2s; background: white;
+  }
+  .empresa-opt.active { border-color: var(--primary); background: #eef3fa; color: var(--primary); }
+
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--text); color: white; padding: 10px 20px; border-radius: 10px;
+    font-size: 13px; font-weight: 500; opacity: 0; transition: all 0.3s; z-index: 100;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .prefilled-badge {
+    display: inline-block; background: #e8f5ee; color: var(--success);
+    font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px;
+    margin-left: 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Backoffice de Vistorias</h1>
+  <div class="sub">Modera Engenharia / Plataforma Técnica</div>
+</div>
+
+<div class="container">
+
+  <!-- EMPRESA -->
+  <div class="card">
+    <div class="card-title">Empresa</div>
+    <div class="empresa-toggle">
+      <div class="empresa-opt active" onclick="setEmpresa('modera')" id="empModera">Modera Engenharia</div>
+      <div class="empresa-opt" onclick="setEmpresa('plataforma')" id="empPlataforma">Plataforma Técnica</div>
+    </div>
+  </div>
+
+  <!-- PERITO -->
+  <div class="card">
+    <div class="card-title">Perito</div>
+    <div id="peritosList"></div>
+    <div class="actions">
+      <button class="btn btn-secondary btn-sm" onclick="toggleAddPerito()">+ Adicionar Perito</button>
+    </div>
+    <div class="add-perito-form" id="addPeritoForm">
+      <div class="form-row" style="grid-template-columns:1fr 1fr 1fr; gap:8px;">
+        <div class="form-group">
+          <label class="form-label">Nome</label>
+          <input class="form-input" id="newPeritoNome" placeholder="Nome">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Telemóvel</label>
+          <input class="form-input" id="newPeritoTel" placeholder="9XXXXXXXX">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" id="newPeritoEmail" placeholder="email@...">
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-secondary btn-sm" onclick="addPerito()">Guardar Perito</button>
+        <button class="btn btn-secondary btn-sm" onclick="toggleAddPerito()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DADOS DO PROCESSO -->
+  <div class="card">
+    <div class="card-title">Dados do Processo <span class="prefilled-badge" id="prefilledBadge" style="display:none">Pré-preenchido</span></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nº Processo *</label>
+        <input class="form-input" id="processo">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nº Certificado</label>
+        <input class="form-input" id="certificado">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nome do Tomador *</label>
+      <input class="form-input" id="nome">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Morada</label>
+      <input class="form-input" id="morada">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">NIF / C.C.</label>
+        <input class="form-input" id="nif">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contacto</label>
+        <input class="form-input" id="contacto">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Email do Contacto</label>
+        <input class="form-input" id="emailContacto">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Na qualidade de</label>
+        <select class="form-select" id="qualidade">
+          <option value="Proprietário">Proprietário</option>
+          <option value="Inquilino">Inquilino</option>
+          <option value="Arrendatário">Arrendatário</option>
+          <option value="Representante Legal">Representante Legal</option>
+          <option value="Outro">Outro</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- LINK + ENVIO -->
+  <div class="card">
+    <div class="card-title">Enviar ao Perito</div>
+    <div class="actions">
+      <button class="btn btn-whatsapp" onclick="enviarWhatsApp()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492l4.638-1.522A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75c-2.16 0-4.16-.684-5.8-1.847l-.416-.312-2.75.903.882-2.681-.338-.432A9.71 9.71 0 012.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75z"/></svg>
+        WhatsApp
+      </button>
+      <button class="btn btn-email" onclick="enviarEmail()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Email
+      </button>
+      <button class="btn btn-copy" onclick="copiarLink()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        Copiar Link
+      </button>
+      <button class="btn btn-secondary btn-sm" onclick="limparCampos()">Limpar</button>
+    </div>
+    <div class="link-box" id="linkBox">O link será gerado aqui...</div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// CONFIG - URL da app de vistoria (GitHub Pages)
+// ============================================================
+var VISTORIA_URL = "https://TEUUSER.github.io/vistoria/index.html";
+
+// ============================================================
+// STATE
+// ============================================================
+var selectedEmpresa = 'modera';
+var selectedPeritoIdx = -1;
+var peritos = [];
+
+// ============================================================
+// PERITOS (localStorage)
+// ============================================================
+function loadPeritos() {
+  try {
+    var data = localStorage.getItem('vistorias_peritos');
+    peritos = data ? JSON.parse(data) : [];
+  } catch(e) { peritos = []; }
+}
+
+function savePeritos() {
+  localStorage.setItem('vistorias_peritos', JSON.stringify(peritos));
+}
+
+function renderPeritos() {
+  var container = document.getElementById('peritosList');
+  if (peritos.length === 0) {
+    container.innerHTML = '<p style="color:#999;font-size:13px;">Nenhum perito registado. Adicione um perito.</p>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < peritos.length; i++) {
+    var p = peritos[i];
+    var sel = i === selectedPeritoIdx ? ' selected' : '';
+    html += '<div class="perito-item' + sel + '" onclick="selectPerito(' + i + ')">' +
+      '<div class="info"><div class="name">' + esc(p.nome) + '</div>' +
+      '<div class="details">' + esc(p.telemovel || '') + (p.email ? ' | ' + esc(p.email) : '') + '</div></div>' +
+      '<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();removePerito(' + i + ')">Remover</button>' +
+      '</div>';
+  }
+  container.innerHTML = html;
+}
+
+function selectPerito(idx) {
+  selectedPeritoIdx = idx;
+  renderPeritos();
+}
+
+function removePerito(idx) {
+  if (confirm('Remover ' + peritos[idx].nome + '?')) {
+    peritos.splice(idx, 1);
+    if (selectedPeritoIdx >= peritos.length) selectedPeritoIdx = -1;
+    savePeritos();
+    renderPeritos();
+  }
+}
+
+function toggleAddPerito() {
+  var form = document.getElementById('addPeritoForm');
+  form.classList.toggle('show');
+}
+
+function addPerito() {
+  var nome = document.getElementById('newPeritoNome').value.trim();
+  var tel = document.getElementById('newPeritoTel').value.trim();
+  var email = document.getElementById('newPeritoEmail').value.trim();
+  if (!nome) { showToast('Preencha o nome do perito'); return; }
+  peritos.push({ nome: nome, telemovel: tel, email: email });
+  savePeritos();
+  renderPeritos();
+  document.getElementById('newPeritoNome').value = '';
+  document.getElementById('newPeritoTel').value = '';
+  document.getElementById('newPeritoEmail').value = '';
+  toggleAddPerito();
+  showToast('Perito adicionado');
+  // Auto-select the new one
+  selectedPeritoIdx = peritos.length - 1;
+  renderPeritos();
+}
+
+// ============================================================
+// EMPRESA
+// ============================================================
+function setEmpresa(emp) {
+  selectedEmpresa = emp;
+  document.getElementById('empModera').className = 'empresa-opt' + (emp === 'modera' ? ' active' : '');
+  document.getElementById('empPlataforma').className = 'empresa-opt' + (emp === 'plataforma' ? ' active' : '');
+}
+
+// ============================================================
+// LINK GENERATION
+// ============================================================
+function getDados() {
+  return {
+    empresa: selectedEmpresa,
+    processo: document.getElementById('processo').value.trim(),
+    certificado: document.getElementById('certificado').value.trim(),
+    nome: document.getElementById('nome').value.trim(),
+    morada: document.getElementById('morada').value.trim(),
+    nif: document.getElementById('nif').value.trim(),
+    contacto: document.getElementById('contacto').value.trim(),
+    email: document.getElementById('emailContacto').value.trim(),
+    qualidade: document.getElementById('qualidade').value,
+  };
+}
+
+function getPerito() {
+  if (selectedPeritoIdx >= 0 && selectedPeritoIdx < peritos.length) {
+    return peritos[selectedPeritoIdx];
+  }
+  return null;
+}
+
+function gerarLink() {
+  var d = getDados();
+  if (!d.processo || !d.nome) {
+    showToast('Preencha o processo e o nome');
+    return null;
+  }
+  
+  var perito = getPerito();
+  var params = [];
+  
+  if (d.empresa) params.push('empresa=' + encodeURIComponent(d.empresa));
+  if (d.processo) params.push('processo=' + encodeURIComponent(d.processo));
+  if (d.certificado) params.push('certificado=' + encodeURIComponent(d.certificado));
+  if (d.nome) params.push('nome=' + encodeURIComponent(d.nome));
+  if (d.morada) params.push('morada=' + encodeURIComponent(d.morada));
+  if (d.nif) params.push('nif=' + encodeURIComponent(d.nif));
+  if (d.contacto) params.push('contacto=' + encodeURIComponent(d.contacto));
+  if (d.email) params.push('email=' + encodeURIComponent(d.email));
+  if (d.qualidade) params.push('qualidade=' + encodeURIComponent(d.qualidade));
+  if (perito) {
+    params.push('perito=' + encodeURIComponent(perito.nome));
+    if (perito.email) params.push('emailPerito=' + encodeURIComponent(perito.email));
+  }
+  
+  var url = VISTORIA_URL + '?' + params.join('&');
+  document.getElementById('linkBox').textContent = url;
+  return url;
+}
+
+// ============================================================
+// ENVIO
+// ============================================================
+function enviarWhatsApp() {
+  var perito = getPerito();
+  if (!perito) { showToast('Selecione um perito'); return; }
+  if (!perito.telemovel) { showToast('Perito sem telemóvel registado'); return; }
+  
+  var url = gerarLink();
+  if (!url) return;
+  
+  var d = getDados();
+  var empNome = selectedEmpresa === 'modera' ? 'Modera Engenharia' : 'Plataforma Técnica';
+  
+  var tel = perito.telemovel.replace(/[\s\-]/g, '');
+  if (tel.charAt(0) === '9') tel = '351' + tel;
+  else if (tel.substring(0,2) === '09') tel = '351' + tel.substring(1);
+  else if (tel.charAt(0) !== '+' && tel.substring(0,3) !== '351') tel = '351' + tel;
+  tel = tel.replace('+', '');
+  
+  var msg = 'Olá ' + perito.nome + ',\n\n' +
+    'Tens uma vistoria agendada (' + empNome + '):\n\n' +
+    '*Processo:* ' + d.processo + '\n' +
+    '*Nome:* ' + d.nome + '\n' +
+    '*Morada:* ' + (d.morada || '-') + '\n' +
+    '*Contacto:* ' + (d.contacto || '-') + '\n\n' +
+    'Abre este link para preencher o auto de vistoria:\n' + url;
+  
+  window.open('https://wa.me/' + tel + '?text=' + encodeURIComponent(msg), '_blank');
+}
+
+function enviarEmail() {
+  var perito = getPerito();
+  if (!perito) { showToast('Selecione um perito'); return; }
+  if (!perito.email) { showToast('Perito sem email registado'); return; }
+  
+  var url = gerarLink();
+  if (!url) return;
+  
+  var d = getDados();
+  var empNome = selectedEmpresa === 'modera' ? 'Modera Engenharia' : 'Plataforma Técnica';
+  
+  var assunto = 'Vistoria - Processo ' + d.processo + ' - ' + d.nome;
+  var corpo = 'Olá ' + perito.nome + ',\n\n' +
+    'Tens uma vistoria agendada (' + empNome + '):\n\n' +
+    'Processo: ' + d.processo + '\n' +
+    'Certificado: ' + (d.certificado || '-') + '\n' +
+    'Nome: ' + d.nome + '\n' +
+    'Morada: ' + (d.morada || '-') + '\n' +
+    'Contacto: ' + (d.contacto || '-') + '\n\n' +
+    'Abre este link para preencher o auto de vistoria:\n' + url + '\n\n' +
+    'Cumprimentos';
+  
+  window.open('mailto:' + perito.email + '?subject=' + encodeURIComponent(assunto) + '&body=' + encodeURIComponent(corpo), '_blank');
+}
+
+function copiarLink() {
+  var url = gerarLink();
+  if (!url) return;
+  try {
+    navigator.clipboard.writeText(url);
+    showToast('Link copiado!');
+  } catch(e) {
+    // Fallback
+    var ta = document.createElement('textarea');
+    ta.value = url;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Link copiado!');
+  }
+}
+
+function limparCampos() {
+  var ids = ['processo','certificado','nome','morada','nif','contacto','emailContacto'];
+  for (var i = 0; i < ids.length; i++) {
+    document.getElementById(ids[i]).value = '';
+  }
+  document.getElementById('linkBox').textContent = 'O link será gerado aqui...';
+  document.getElementById('qualidade').value = 'Proprietário';
+}
+
+// ============================================================
+// URL PREFILL (from bookmarklet)
+// ============================================================
+function prefillFromURL() {
+  var params = new URLSearchParams(window.location.search);
+  var map = {
+    processo:'processo', certificado:'certificado', nome:'nome',
+    morada:'morada', nif:'nif', contacto:'contacto',
+    email:'emailContacto', qualidade:'qualidade', empresa:'empresa'
+  };
+  var filled = false;
+  for (var key in map) {
+    var val = params.get(key);
+    if (val) {
+      filled = true;
+      if (key === 'empresa') {
+        setEmpresa(val);
+      } else if (key === 'qualidade') {
+        var sel = document.getElementById('qualidade');
+        for (var i = 0; i < sel.options.length; i++) {
+          if (sel.options[i].value.toLowerCase() === val.toLowerCase()) {
+            sel.selectedIndex = i; break;
+          }
+        }
+      } else {
+        var el = document.getElementById(map[key]);
+        if (el) el.value = val;
+      }
+    }
+  }
+  if (filled) {
+    document.getElementById('prefilledBadge').style.display = 'inline-block';
+  }
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function esc(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+loadPeritos();
+renderPeritos();
+prefillFromURL();
+</script>
+</body>
+</html>

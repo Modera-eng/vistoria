@@ -897,6 +897,10 @@ function waitForJsPDF(callback, maxWait) {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
     Gerar PDF
   </button>
+  <button class="btn btn-primary" id="btnSendEmail" onclick="generateAndSend()" style="display:none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+    Gerar e Enviar
+  </button>
 </div>
 
 <!-- Toast -->
@@ -1092,6 +1096,7 @@ function updateNav() {
   document.getElementById('btnPrev').style.display = currentSection === 0 ? 'none' : 'flex';
   document.getElementById('btnNext').style.display = currentSection === totalSections - 1 ? 'none' : 'flex';
   document.getElementById('btnGenerate').style.display = currentSection === totalSections - 1 ? 'flex' : 'none';
+  document.getElementById('btnSendEmail').style.display = currentSection === totalSections - 1 ? 'flex' : 'none';
 }
 
 function updateProgress() {
@@ -1320,61 +1325,31 @@ function showToast(msg) {
 }
 
 // PDF Generation
-function generatePDF() {
-  const d = getFormData();
-  if (!d.nome || !d.nProcesso) {
-    showToast('⚠️ Preencha o nome e nº de processo');
-    return;
-  }
-  if (!d.declaracoes) {
-    showToast('⚠️ Preencha as declarações da vistoria');
-    return;
-  }
+function buildPDFContent(doc, d) {
+  var pageW = 210;
+  var margin = 20;
+  var contentW = pageW - margin * 2;
+  var y = 20;
 
-  document.getElementById('generating').classList.add('active');
-
-  waitForJsPDF(function(loaded) {
-    if (!loaded) {
-      document.getElementById('generating').classList.remove('active');
-      showToast('Erro: biblioteca PDF não carregou. Verifique a internet.');
-      return;
+  function checkPage(needed) {
+    if (y + needed > 275) {
+      doc.addPage();
+      y = 20;
     }
-    setTimeout(function() {
-    try {
-      var jsPDF = window.jspdf.jsPDF;
-      var doc = new jsPDF('p', 'mm', 'a4');
-      const pageW = 210;
-      const margin = 20;
-      const contentW = pageW - margin * 2;
-      let y = 20;
+  }
 
-      // Helper: check page break
-      function checkPage(needed) {
-        if (y + needed > 275) {
-          doc.addPage();
-          y = 20;
-        }
-      }
+  var lM = 26;
+  var rM = 184;
+  var valX = 68;
+  var midX = 118;
+  var midValX = 151;
 
-      // --- Faithful replica of original Auto de Vistoria layout ---
-      // Original PDF: US Letter 612x792pt. We produce A4 210x297mm.
-      // Scale factor from original pts to A4 mm: ~0.344 (210/612)
-      // All coordinates tuned to match original proportions on A4.
+  doc.setDrawColor(0, 0, 0);
+  doc.setTextColor(0, 0, 0);
 
-      const lM = 26;    // left margin (labels start)
-      const rM = 184;   // right margin edge (lines end)
-      const valX = 68;  // value column start (where underlined values go)
-      const midX = 118; // mid point for split fields (NIF, E-MAIL, CERTIFICADO)
-      const midValX = 151; // value after mid labels
+  var co = COMPANIES[d.empresa] || COMPANIES.modera;
+  doc.addImage(co.logo, 'PNG', lM, 11, co.logoW, co.logoH);
 
-      doc.setDrawColor(0, 0, 0);
-      doc.setTextColor(0, 0, 0);
-
-      // ====== LOGO (from selected company) ======
-      var co = COMPANIES[d.empresa] || COMPANIES.modera;
-      doc.addImage(co.logo, 'PNG', lM, 11, co.logoW, co.logoH);
-
-      // ====== TITLE: AUTO DE VISTORIA ======
       y = 38;
       doc.setFontSize(15);
       doc.setFont(undefined, 'bold');
@@ -1638,6 +1613,37 @@ function generatePDF() {
         doc.text('Página ' + p, rM, 293, { align: 'right' });
       }
 
+
+}
+
+
+function generatePDF() {
+  const d = getFormData();
+  if (!d.nome || !d.nProcesso) {
+    showToast('⚠️ Preencha o nome e nº de processo');
+    return;
+  }
+  if (!d.declaracoes) {
+    showToast('⚠️ Preencha as declarações da vistoria');
+    return;
+  }
+
+  document.getElementById('generating').classList.add('active');
+
+  waitForJsPDF(function(loaded) {
+    if (!loaded) {
+      document.getElementById('generating').classList.remove('active');
+      showToast('Erro: biblioteca PDF não carregou. Verifique a internet.');
+      return;
+    }
+    setTimeout(function() {
+    try {
+      var jsPDF = window.jspdf.jsPDF;
+      var doc = new jsPDF('p', 'mm', 'a4');
+
+      // Build the PDF content
+      buildPDFContent(doc, d);
+
       // Save
       var filename = 'Auto_Vistoria_' + (d.nProcesso || 'rascunho') + '_' + d.data.replace(/\//g, '-') + '.pdf';
       // Save PDF - iOS Safari compatible
@@ -1674,6 +1680,127 @@ function generatePDF() {
     }
   }, 600);
   }); // end waitForJsPDF
+}
+
+// ====== EMAIL API CONFIG ======
+// URL da API de email (a correr na Synology ou outro servidor)
+// Altere para o URL da sua API
+var EMAIL_API_URL = '';
+
+// Detectar API URL dos parâmetros ou usar default
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var apiUrl = params.get('api');
+  if (apiUrl) {
+    EMAIL_API_URL = apiUrl;
+  } else {
+    // Tentar descobrir automaticamente (mesmo servidor, porta 5000)
+    var loc = window.location;
+    EMAIL_API_URL = loc.protocol + '//' + loc.hostname + ':5000';
+  }
+})();
+
+function generateAndSend() {
+  var d = getFormData();
+  if (!d.nome || !d.nProcesso) {
+    showToast('Preencha o nome e nº de processo');
+    return;
+  }
+  if (!d.declaracoes) {
+    showToast('Preencha as declarações da vistoria');
+    return;
+  }
+  
+  // Verificar que há pelo menos um email
+  var hasEmail = d.emailContacto || d.emailPerito || d.emailGeral;
+  if (!hasEmail) {
+    showToast('Preencha pelo menos um email de destinatário');
+    return;
+  }
+  
+  document.getElementById('generating').classList.add('active');
+  document.querySelector('#generating p').textContent = 'A gerar PDF e a enviar emails...';
+  
+  waitForJsPDF(function(loaded) {
+    if (!loaded) {
+      document.getElementById('generating').classList.remove('active');
+      showToast('Erro: biblioteca PDF não carregou');
+      return;
+    }
+    
+    setTimeout(function() {
+      try {
+        // Generate PDF (same code as generatePDF but get base64 output)
+        var jsPDF = window.jspdf.jsPDF;
+        var doc = new jsPDF('p', 'mm', 'a4');
+        
+        // Call the same PDF building logic
+        buildPDFContent(doc, d);
+        
+        // Get PDF as base64
+        var pdfBase64 = doc.output('datauristring').split(',')[1];
+        
+        // Also save locally
+        var pdfBlob = doc.output('blob');
+        var filename = 'Auto_Vistoria_' + (d.nProcesso || 'rascunho') + '_' + d.data.replace(/\//g, '-') + '.pdf';
+        
+        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        
+        var blobUrl = URL.createObjectURL(pdfBlob);
+        if (isIOS) {
+          window.open(blobUrl, '_blank');
+        } else {
+          var link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+        setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 10000);
+        
+        // Send email via API
+        var payload = {
+          pdf_base64: pdfBase64,
+          dados: d,
+          destinatarios: {
+            contacto: d.emailContacto || '',
+            perito: d.emailPerito || '',
+            geral: d.emailGeral || ''
+          },
+          empresa: d.empresa
+        };
+        
+        fetch(EMAIL_API_URL + '/api/enviar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+        .then(function(resp) { return resp.json(); })
+        .then(function(result) {
+          document.getElementById('generating').classList.remove('active');
+          if (result.success) {
+            showToast('PDF gerado e ' + result.total_enviados + ' email(s) enviado(s)!');
+          } else if (result.total_enviados > 0) {
+            showToast('PDF gerado. ' + result.total_enviados + ' enviado(s), ' + result.total_erros + ' erro(s)');
+          } else {
+            showToast('PDF gerado mas erro no envio: ' + (result.error || 'verifique a API'));
+          }
+        })
+        .catch(function(err) {
+          document.getElementById('generating').classList.remove('active');
+          showToast('PDF gerado mas falhou o envio. API indisponível.');
+          console.error('Email API error:', err);
+        });
+        
+      } catch (err) {
+        document.getElementById('generating').classList.remove('active');
+        showToast('Erro ao gerar PDF: ' + err.message);
+        console.error(err);
+      }
+    }, 600);
+  });
 }
 
 // Init

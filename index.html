@@ -1680,7 +1680,7 @@ function generatePDF(shareMode) {
                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
       if (shareMode) {
-        // SHARE MODE: save PDF first, then show send options modal
+        // SHARE MODE: save PDF, then show email options
         var co = COMPANIES[d.empresa] || COMPANIES.modera;
         
         var recipients = [];
@@ -1701,41 +1701,14 @@ function generatePDF(shareMode) {
         window._sendData = {
           recipients: recipients,
           subject: subject,
-          body: emailBody,
-          pdfBlob: pdfBlob,
-          filename: filename,
-          isIOS: isIOS
+          body: emailBody
         };
         
-        // On mobile, try Web Share API first (attaches PDF + opens share sheet)
-        var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-                       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        
-        if (isMobile) {
-          try {
-            var pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
-            if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-              document.getElementById('generating').classList.remove('active');
-              navigator.share({
-                title: subject,
-                files: [pdfFile]
-              }).then(function() {
-                showToast('Partilhado com sucesso!');
-              }).catch(function(err) {
-                if (err.name !== 'AbortError') {
-                  // Fallback: save + show modal
-                  savePDFLocal(pdfBlob, filename, isIOS);
-                  showSendModal(recipients);
-                }
-              });
-              return;
-            }
-          } catch(e) {}
-        }
-        
-        // Desktop or fallback: save PDF + show send modal
+        // Save PDF first
         document.getElementById('generating').classList.remove('active');
         savePDFLocal(pdfBlob, filename, isIOS);
+        
+        // Show send modal with email options
         showSendModal(recipients);
         
       } else {
@@ -1799,10 +1772,13 @@ function sendViaGmail() {
   var sd = window._sendData;
   if (!sd) return;
   var to = sd.recipients.join(',');
+  // Gmail compose URL - works on mobile and desktop
+  // Use %0A for newlines (not \n) in the body
+  var bodyEncoded = sd.body.replace(/\n/g, '%0A');
   var url = 'https://mail.google.com/mail/?view=cm&fs=1' +
     '&to=' + encodeURIComponent(to) +
     '&su=' + encodeURIComponent(sd.subject) +
-    '&body=' + encodeURIComponent(sd.body + '\n\n(Anexe o PDF descarregado antes de enviar)');
+    '&body=' + bodyEncoded + '%0A%0A(Anexe o PDF descarregado antes de enviar)';
   window.open(url, '_blank');
   closeSendModal();
   showToast('Gmail aberto. Anexe o PDF.');
@@ -1812,9 +1788,11 @@ function sendViaOutlook() {
   var sd = window._sendData;
   if (!sd) return;
   var to = sd.recipients.join(';');
+  // Outlook web compose URL
+  var bodyEncoded = sd.body.replace(/\n/g, '%0A');
   var url = 'https://outlook.live.com/mail/0/deeplink/compose?to=' + encodeURIComponent(to) +
     '&subject=' + encodeURIComponent(sd.subject) +
-    '&body=' + encodeURIComponent(sd.body + '\n\n(Anexe o PDF descarregado antes de enviar)');
+    '&body=' + bodyEncoded + '%0A%0A(Anexe o PDF descarregado antes de enviar)';
   window.open(url, '_blank');
   closeSendModal();
   showToast('Outlook aberto. Anexe o PDF.');

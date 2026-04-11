@@ -209,6 +209,10 @@
         </select>
       </div>
     </div>
+    <div class="form-group">
+      <label class="form-label">Data/Hora da Peritagem</label>
+      <input class="form-input" id="dataPeritagem" placeholder="dd/MM/yyyy HH:mm">
+    </div>
   </div>
 
   <!-- LINK + ENVIO -->
@@ -226,6 +230,10 @@
       <button class="btn btn-copy" onclick="copiarLink()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
         Copiar Link
+      </button>
+      <button class="btn btn-sm" style="background:#4285f4;color:white;" onclick="criarEventoCalendario()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Calendário
       </button>
       <button class="btn btn-secondary btn-sm" onclick="limparCampos()">Limpar</button>
     </div>
@@ -342,6 +350,7 @@ function getDados() {
     contacto: document.getElementById('contacto').value.trim(),
     email: document.getElementById('emailContacto').value.trim(),
     qualidade: document.getElementById('qualidade').value,
+    dataPeritagem: document.getElementById('dataPeritagem').value.trim(),
   };
 }
 
@@ -406,8 +415,9 @@ function enviarWhatsApp() {
     '*Processo:* ' + d.processo + '\n' +
     '*Nome:* ' + d.nome + '\n' +
     '*Morada:* ' + (d.morada || '-') + '\n' +
-    '*Contacto:* ' + (d.contacto || '-') + '\n\n' +
-    'Abre este link para preencher o auto de vistoria:\n' + url;
+    '*Contacto:* ' + (d.contacto || '-') + '\n' +
+    (d.dataPeritagem ? '*Data:* ' + d.dataPeritagem + '\n' : '') +
+    '\nAbre este link para preencher o auto de vistoria:\n' + url;
   
   window.open('https://wa.me/' + tel + '?text=' + encodeURIComponent(msg), '_blank');
 }
@@ -430,8 +440,9 @@ function enviarEmail() {
     'Certificado: ' + (d.certificado || '-') + '\n' +
     'Nome: ' + d.nome + '\n' +
     'Morada: ' + (d.morada || '-') + '\n' +
-    'Contacto: ' + (d.contacto || '-') + '\n\n' +
-    'Abre este link para preencher o auto de vistoria:\n' + url + '\n\n' +
+    'Contacto: ' + (d.contacto || '-') + '\n' +
+    (d.dataPeritagem ? 'Data da peritagem: ' + d.dataPeritagem + '\n' : '') +
+    '\nAbre este link para preencher o auto de vistoria:\n' + url + '\n\n' +
     'Cumprimentos';
   
   window.open('mailto:' + perito.email + '?subject=' + encodeURIComponent(assunto) + '&body=' + encodeURIComponent(corpo), '_blank');
@@ -456,12 +467,93 @@ function copiarLink() {
 }
 
 function limparCampos() {
-  var ids = ['processo','certificado','nome','morada','nif','contacto','emailContacto'];
+  var ids = ['processo','certificado','nome','morada','nif','contacto','emailContacto','dataPeritagem'];
   for (var i = 0; i < ids.length; i++) {
     document.getElementById(ids[i]).value = '';
   }
   document.getElementById('linkBox').textContent = 'O link será gerado aqui...';
   document.getElementById('qualidade').value = 'Proprietário';
+}
+
+// ============================================================
+// GOOGLE CALENDAR EVENT
+// ============================================================
+function parseDataPeritagem(str) {
+  // Parse "dd/MM/yyyy HH:mm" to Date object
+  if (!str) return null;
+  var parts = str.split(/[\s\/\-:]+/);
+  if (parts.length < 5) {
+    // Try "dd/MM/yyyy" without time
+    if (parts.length >= 3) {
+      return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]), 9, 0);
+    }
+    return null;
+  }
+  var day = parseInt(parts[0]);
+  var month = parseInt(parts[1]) - 1;
+  var year = parseInt(parts[2]);
+  var hour = parseInt(parts[3]);
+  var min = parseInt(parts[4]);
+  return new Date(year, month, day, hour, min);
+}
+
+function toGCalDate(date) {
+  // Format as YYYYMMDDTHHmmSS for Google Calendar
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  return date.getFullYear() +
+    pad(date.getMonth() + 1) +
+    pad(date.getDate()) + 'T' +
+    pad(date.getHours()) +
+    pad(date.getMinutes()) + '00';
+}
+
+function criarEventoCalendario() {
+  var d = getDados();
+  var perito = getPerito();
+  
+  if (!d.processo || !d.nome) {
+    showToast('Preencha o processo e o nome');
+    return;
+  }
+  
+  if (!d.dataPeritagem) {
+    showToast('Preencha a data/hora da peritagem');
+    return;
+  }
+  
+  var url = gerarLink();
+  if (!url) return;
+  
+  var startDate = parseDataPeritagem(d.dataPeritagem);
+  if (!startDate || isNaN(startDate.getTime())) {
+    showToast('Data inválida. Use formato dd/MM/yyyy HH:mm');
+    return;
+  }
+  
+  // End date = start + 2 hours
+  var endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
+  
+  var empNome = selectedEmpresa === 'modera' ? 'Modera' : 'Plat. Técnica';
+  var title = 'Vistoria ' + empNome + ' - ' + d.processo + ' - ' + d.nome;
+  
+  var details = 'Processo: ' + d.processo + '\n' +
+    'Certificado: ' + (d.certificado || '-') + '\n' +
+    'Nome: ' + d.nome + '\n' +
+    'NIF: ' + (d.nif || '-') + '\n' +
+    'Contacto: ' + (d.contacto || '-') + '\n' +
+    'Email: ' + (d.email || '-') + '\n\n' +
+    'Link da vistoria:\n' + url;
+  
+  var location = d.morada || '';
+  
+  var calUrl = 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+    '&text=' + encodeURIComponent(title) +
+    '&dates=' + toGCalDate(startDate) + '/' + toGCalDate(endDate) +
+    '&details=' + encodeURIComponent(details) +
+    '&location=' + encodeURIComponent(location) +
+    '&sf=true&output=xml';
+  
+  window.open(calUrl, '_blank');
 }
 
 // ============================================================
@@ -472,7 +564,8 @@ function prefillFromURL() {
   var map = {
     processo:'processo', certificado:'certificado', nome:'nome',
     morada:'morada', nif:'nif', contacto:'contacto',
-    email:'emailContacto', qualidade:'qualidade', empresa:'empresa'
+    email:'emailContacto', qualidade:'qualidade', empresa:'empresa',
+    dataPeritagem:'dataPeritagem'
   };
   var filled = false;
   for (var key in map) {

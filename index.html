@@ -917,6 +917,33 @@ function waitForJsPDF(callback, maxWait) {
   </div>
 </div>
 
+<!-- Send modal -->
+<div class="modal-overlay" id="sendModal">
+  <div class="modal-content">
+    <div class="modal-title">
+      Enviar Relatório
+      <button class="modal-close" onclick="closeSendModal()">×</button>
+    </div>
+    <p style="font-size:13px;color:#6b6b80;margin-bottom:12px;">O PDF foi guardado. Escolha como enviar:</p>
+    <div id="sendRecipients" style="font-size:13px;margin-bottom:16px;padding:10px;background:#f8f6f3;border-radius:8px;"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn btn-primary" onclick="sendViaGmail()" style="justify-content:center;background:#c71610;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+        Abrir no Gmail (web)
+      </button>
+      <button class="btn btn-primary" onclick="sendViaOutlook()" style="justify-content:center;background:#0078d4;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+        Abrir no Outlook (web)
+      </button>
+      <button class="btn btn-secondary" onclick="sendViaMailto()" style="justify-content:center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Abrir app de email do sistema
+      </button>
+    </div>
+    <p style="font-size:11px;color:#999;margin-top:12px;text-align:center;">Após abrir o email, anexe o PDF que foi descarregado.</p>
+  </div>
+</div>
+
 <!-- Generating overlay -->
 <div class="generating" id="generating">
   <div class="spinner"></div>
@@ -1653,9 +1680,8 @@ function generatePDF(shareMode) {
                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
       if (shareMode) {
-        // SHARE MODE: use Web Share API or mailto fallback
+        // SHARE MODE: save PDF first, then show send options modal
         var co = COMPANIES[d.empresa] || COMPANIES.modera;
-        var pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
         
         var recipients = [];
         if (d.emailContacto) recipients.push(d.emailContacto);
@@ -1663,7 +1689,7 @@ function generatePDF(shareMode) {
         if (d.emailGeral) recipients.push(d.emailGeral);
         
         var subject = 'Auto de Vistoria - Processo ' + d.nProcesso + (d.nCertificado ? ' / ' + d.nCertificado : '');
-        var body = 'Exmos. Senhores,\n\n' +
+        var emailBody = 'Exmos. Senhores,\n\n' +
           'Segue em anexo o auto de vistoria do processo ' + d.nProcesso +
           (d.nCertificado ? ' e certificado ' + d.nCertificado : '') +
           ', realizada no dia ' + d.data + '.\n\n' +
@@ -1671,25 +1697,47 @@ function generatePDF(shareMode) {
           (d.nomePerito || '') + '\n' +
           co.name;
         
-        document.getElementById('generating').classList.remove('active');
+        // Store for modal buttons
+        window._sendData = {
+          recipients: recipients,
+          subject: subject,
+          body: emailBody,
+          pdfBlob: pdfBlob,
+          filename: filename,
+          isIOS: isIOS
+        };
         
-        // Try Web Share API (mobile - attaches PDF directly)
-        if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-          navigator.share({
-            title: subject,
-            text: body,
-            files: [pdfFile]
-          }).then(function() {
-            showToast('Partilhado com sucesso!');
-          }).catch(function(err) {
-            if (err.name !== 'AbortError') {
-              openMailtoWithPDF(recipients, subject, body, pdfBlob, filename, isIOS);
+        // On mobile, try Web Share API first (attaches PDF + opens share sheet)
+        var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+                       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        
+        if (isMobile) {
+          try {
+            var pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
+            if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+              document.getElementById('generating').classList.remove('active');
+              navigator.share({
+                title: subject,
+                files: [pdfFile]
+              }).then(function() {
+                showToast('Partilhado com sucesso!');
+              }).catch(function(err) {
+                if (err.name !== 'AbortError') {
+                  // Fallback: save + show modal
+                  savePDFLocal(pdfBlob, filename, isIOS);
+                  showSendModal(recipients);
+                }
+              });
+              return;
             }
-          });
-        } else {
-          // Desktop/fallback: download PDF + open mailto
-          openMailtoWithPDF(recipients, subject, body, pdfBlob, filename, isIOS);
+          } catch(e) {}
         }
+        
+        // Desktop or fallback: save PDF + show send modal
+        document.getElementById('generating').classList.remove('active');
+        savePDFLocal(pdfBlob, filename, isIOS);
+        showSendModal(recipients);
+        
       } else {
         // DOWNLOAD MODE: just save the PDF
         var blobUrl = URL.createObjectURL(pdfBlob);
@@ -1722,8 +1770,7 @@ function generateAndShare() {
   generatePDF(true);
 }
 
-function openMailtoWithPDF(recipients, subject, body, pdfBlob, filename, isIOS) {
-  // First save the PDF
+function savePDFLocal(pdfBlob, filename, isIOS) {
   var blobUrl = URL.createObjectURL(pdfBlob);
   if (isIOS) {
     window.open(blobUrl, '_blank');
@@ -1735,18 +1782,54 @@ function openMailtoWithPDF(recipients, subject, body, pdfBlob, filename, isIOS) 
     link.click();
     document.body.removeChild(link);
   }
-  setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 10000);
-  
-  // Then open email client with recipients and body
-  var to = recipients.join(',');
-  var mailtoUrl = 'mailto:' + to + 
-    '?subject=' + encodeURIComponent(subject) + 
-    '&body=' + encodeURIComponent(body + '\n\n(Por favor anexe o PDF descarregado a este email)');
-  
-  setTimeout(function() {
-    window.location.href = mailtoUrl;
-    showToast('PDF guardado. Anexe-o ao email.');
-  }, 500);
+  setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 15000);
+}
+
+function showSendModal(recipients) {
+  var recHtml = '<strong>Para:</strong> ' + (recipients.length > 0 ? recipients.join(', ') : '(nenhum email definido)');
+  document.getElementById('sendRecipients').innerHTML = recHtml;
+  document.getElementById('sendModal').classList.add('active');
+}
+
+function closeSendModal() {
+  document.getElementById('sendModal').classList.remove('active');
+}
+
+function sendViaGmail() {
+  var sd = window._sendData;
+  if (!sd) return;
+  var to = sd.recipients.join(',');
+  var url = 'https://mail.google.com/mail/?view=cm&fs=1' +
+    '&to=' + encodeURIComponent(to) +
+    '&su=' + encodeURIComponent(sd.subject) +
+    '&body=' + encodeURIComponent(sd.body + '\n\n(Anexe o PDF descarregado antes de enviar)');
+  window.open(url, '_blank');
+  closeSendModal();
+  showToast('Gmail aberto. Anexe o PDF.');
+}
+
+function sendViaOutlook() {
+  var sd = window._sendData;
+  if (!sd) return;
+  var to = sd.recipients.join(';');
+  var url = 'https://outlook.live.com/mail/0/deeplink/compose?to=' + encodeURIComponent(to) +
+    '&subject=' + encodeURIComponent(sd.subject) +
+    '&body=' + encodeURIComponent(sd.body + '\n\n(Anexe o PDF descarregado antes de enviar)');
+  window.open(url, '_blank');
+  closeSendModal();
+  showToast('Outlook aberto. Anexe o PDF.');
+}
+
+function sendViaMailto() {
+  var sd = window._sendData;
+  if (!sd) return;
+  var to = sd.recipients.join(',');
+  var url = 'mailto:' + to +
+    '?subject=' + encodeURIComponent(sd.subject) +
+    '&body=' + encodeURIComponent(sd.body + '\n\n(Anexe o PDF descarregado antes de enviar)');
+  window.location.href = url;
+  closeSendModal();
+  showToast('App de email aberta. Anexe o PDF.');
 }
 
 // Init

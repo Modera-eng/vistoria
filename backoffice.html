@@ -534,7 +534,7 @@ function criarEventoCalendario() {
   var endDate = new Date(startDate.getTime() + 1 * 60 * 60 * 1000);
   
   var empNome = selectedEmpresa === 'modera' ? 'Modera' : 'Plat. Técnica';
-  var title = 'Vistoria ' + empNome + ' - ' + d.processo + ' - ' + d.nome;
+  var title = 'Vistoria ' + empNome + ' - ' + d.certificado + ' - ' + d.nome;
   
   var details = 'Processo: ' + d.processo + '\n' +
     'Certificado: ' + (d.certificado || '-') + '\n' +

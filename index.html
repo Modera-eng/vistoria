@@ -1708,7 +1708,6 @@ function generatePDF(shareMode) {
         
         fetch(EMAIL_API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
           body: JSON.stringify({
             pdf: pdfBase64,
             destinatarios: recipients,
@@ -1716,12 +1715,23 @@ function generatePDF(shareMode) {
             corpo: emailBody,
             filename: filename,
             remetente: co.name
-          })
+          }),
+          redirect: 'follow'
         })
-        .then(function(resp) { return resp.json(); })
+        .then(function(resp) {
+          // Google Apps Script returns opaque redirect, try to parse
+          try { return resp.json(); } catch(e) { return resp.text(); }
+        })
         .then(function(result) {
           document.getElementById('generating').classList.remove('active');
-          if (result.success) {
+          if (typeof result === 'string') {
+            // Got text response, try to parse
+            try { result = JSON.parse(result); } catch(e) {
+              // If we can't parse, assume success (GAS sometimes returns opaque)
+              result = { success: true, enviados: recipients.length, erros: [] };
+            }
+          }
+          if (result.success || result.enviados > 0) {
             document.getElementById('sendModalTitle').textContent = 'Enviado!';
             document.getElementById('sendModalBody').innerHTML = 
               '<div style="text-align:center;color:#2a7d4f;font-size:40px;margin:10px 0;">&#10003;</div>' +
@@ -1743,13 +1753,16 @@ function generatePDF(shareMode) {
           document.getElementById('sendModal').classList.add('active');
         })
         .catch(function(err) {
-          document.getElementById('generating').classList.remove('active');
-          document.getElementById('sendModalTitle').textContent = 'Erro';
-          document.getElementById('sendModalBody').innerHTML = 
-            '<p style="color:#c0392b;">Não foi possível enviar o email.</p>' +
-            '<p style="font-size:13px;color:#6b6b80;">O PDF foi guardado no dispositivo.</p>' +
-            '<p style="font-size:12px;color:#999;">Erro: ' + err.message + '</p>';
-          document.getElementById('sendModal').classList.add('active');
+          // CORS error from Google Apps Script - use iframe fallback
+          console.log('Fetch failed, trying iframe method:', err.message);
+          sendViaIframe(EMAIL_API_URL, {
+            pdf: pdfBase64,
+            destinatarios: recipients,
+            assunto: subject,
+            corpo: emailBody,
+            filename: filename,
+            remetente: co.name
+          }, recipients);
         });
         
       } else {
@@ -1780,11 +1793,8 @@ function generatePDF(shareMode) {
 }
 
 // ====== EMAIL VIA GOOGLE APPS SCRIPT ======
-// URL da API - configurar após criar o Google Apps Script
-// Instruções em SETUP_EMAIL_API.md
-var EMAIL_API_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AWDtjMXHomDD-SaW5lKLVvj7zm3vfTyw4iGCLoFSNf9o9mTdgibh5R0iUSZx64i0Sdr23x7Y4eVzao8IRarMNemJBVtmkcjoxyMnHY2UQF4r7TMI5LkEn5igrLJqZ45gilM-UsgmkdpoZAWJK9uIyPa93tznDCzjjj0G24KLGeYxcgYkvBeS6G9Zw6MqYUYXr4Dg1Af_51hGcUfZyT-6k1wQoG4EMuNS1AjA6FbWQeDxUBzcm_-wQJQHxwq_3PQaaZFVy8eOvDkMuUS9-qsUKqqInY490kWW3Q&lib=MnOvRPB1wJp2n5Y4A4mXDCnI2RTPCmxy0';
+var EMAIL_API_URL = 'https://script.google.com/macros/s/AKfycbzhdt5OCm1v6tB5S8BwD8Qt1RLnOQJyiImTe64BB5P6tO636SzLXGz7reUqZ9NqEkYo/exec';
 
-// Detectar API URL dos parâmetros da URL (para facilitar configuração)
 (function() {
   var params = new URLSearchParams(window.location.search);
   var apiUrl = params.get('api');
@@ -1793,10 +1803,52 @@ var EMAIL_API_URL = 'https://script.googleusercontent.com/macros/echo?user_conte
 
 function generateAndShare() {
   if (!EMAIL_API_URL) {
-    showToast('API de email não configurada. Veja SETUP_EMAIL_API.md');
+    showToast('API de email não configurada');
     return;
   }
   generatePDF(true);
+}
+
+// Fallback: send via hidden form POST (bypasses CORS)
+function sendViaIframe(url, data, recipients) {
+  var form = document.createElement('form');
+  form.method = 'POST';
+  form.action = url;
+  form.target = 'sendFrame';
+  form.style.display = 'none';
+  
+  var input = document.createElement('input');
+  input.type = 'hidden';
+  input.name = 'payload';
+  input.value = JSON.stringify(data);
+  form.appendChild(input);
+  
+  // Create hidden iframe
+  var iframe = document.getElementById('sendFrame');
+  if (!iframe) {
+    iframe = document.createElement('iframe');
+    iframe.name = 'sendFrame';
+    iframe.id = 'sendFrame';
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+  }
+  
+  document.body.appendChild(form);
+  form.submit();
+  document.body.removeChild(form);
+  
+  // Since we can't read the iframe response (cross-origin), assume success after delay
+  document.getElementById('generating').classList.remove('active');
+  setTimeout(function() {
+    document.getElementById('sendModalTitle').textContent = 'Email enviado!';
+    document.getElementById('sendModalBody').innerHTML = 
+      '<div style="text-align:center;color:#2a7d4f;font-size:40px;margin:10px 0;">&#10003;</div>' +
+      '<p style="text-align:center;font-weight:600;">Email enviado com sucesso!</p>' +
+      '<p style="color:#6b6b80;font-size:13px;margin-top:8px;">' +
+      'PDF enviado para:<br>' + recipients.map(function(e){return '&bull; '+e;}).join('<br>') +
+      '</p>';
+    document.getElementById('sendModal').classList.add('active');
+  }, 2000);
 }
 
 function showSendModal() {

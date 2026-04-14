@@ -1660,7 +1660,7 @@ function generatePDF(shareMode) {
       buildPDFContent(doc, d);
 
       // Save
-      var filename = 'Auto_Vistoria_' + (d.nProcesso || 'rascunho') + '_' + d.data.replace(/\//g, '-') + '.pdf';
+      var filename = 'Auto_Vistoria_' + (d.nCertificado || 'rascunho') + '_' + d.data.replace(/\//g, '-') + '.pdf';
       // Save/Share PDF
       var pdfBlob = doc.output('blob');
       var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 

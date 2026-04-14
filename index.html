@@ -917,30 +917,17 @@ function waitForJsPDF(callback, maxWait) {
   </div>
 </div>
 
-<!-- Send modal -->
+<!-- Send modal - resultado do envio -->
 <div class="modal-overlay" id="sendModal">
   <div class="modal-content">
     <div class="modal-title">
-      Enviar Relatório
+      <span id="sendModalTitle">A enviar...</span>
       <button class="modal-close" onclick="closeSendModal()">×</button>
     </div>
-    <p style="font-size:13px;color:#6b6b80;margin-bottom:12px;">O PDF foi guardado. Escolha como enviar:</p>
-    <div id="sendRecipients" style="font-size:13px;margin-bottom:16px;padding:10px;background:#f8f6f3;border-radius:8px;"></div>
-    <div style="display:flex;flex-direction:column;gap:10px;">
-      <button class="btn btn-primary" onclick="sendViaGmail()" style="justify-content:center;background:#c71610;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-        Abrir no Gmail (web)
-      </button>
-      <button class="btn btn-primary" onclick="sendViaOutlook()" style="justify-content:center;background:#0078d4;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-        Abrir no Outlook (web)
-      </button>
-      <button class="btn btn-secondary" onclick="sendViaMailto()" style="justify-content:center;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-        Abrir app de email do sistema
-      </button>
+    <div id="sendModalBody" style="font-size:14px;line-height:1.6;"></div>
+    <div style="margin-top:16px;text-align:center;">
+      <button class="btn btn-secondary" onclick="closeSendModal()" style="display:inline-flex;">Fechar</button>
     </div>
-    <p style="font-size:11px;color:#999;margin-top:12px;text-align:center;">Após abrir o email, anexe o PDF que foi descarregado.</p>
   </div>
 </div>
 
@@ -1680,13 +1667,19 @@ function generatePDF(shareMode) {
                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
       if (shareMode) {
-        // SHARE MODE: save PDF, then show email options
+        // SEND MODE: send email via Google Apps Script API
         var co = COMPANIES[d.empresa] || COMPANIES.modera;
         
         var recipients = [];
         if (d.emailContacto) recipients.push(d.emailContacto);
         if (d.emailPerito) recipients.push(d.emailPerito);
         if (d.emailGeral) recipients.push(d.emailGeral);
+        
+        if (recipients.length === 0) {
+          document.getElementById('generating').classList.remove('active');
+          showToast('Preencha pelo menos um email');
+          return;
+        }
         
         var subject = 'Auto de Vistoria - Processo ' + d.nProcesso + (d.nCertificado ? ' / ' + d.nCertificado : '');
         var emailBody = 'Exmos. Senhores,\n\n' +
@@ -1697,19 +1690,67 @@ function generatePDF(shareMode) {
           (d.nomePerito || '') + '\n' +
           co.name;
         
-        // Store for modal buttons
-        window._sendData = {
-          recipients: recipients,
-          subject: subject,
-          body: emailBody
-        };
+        // Get PDF as base64 for the API
+        var pdfBase64 = doc.output('datauristring').split(',')[1];
         
-        // Save PDF first
-        document.getElementById('generating').classList.remove('active');
+        // Also save locally as backup
         savePDFLocal(pdfBlob, filename, isIOS);
         
-        // Show send modal with email options
-        showSendModal(recipients);
+        // Update generating message
+        document.querySelector('#generating p').textContent = 'A enviar email...';
+        
+        // Send via Google Apps Script API
+        if (!EMAIL_API_URL) {
+          document.getElementById('generating').classList.remove('active');
+          showToast('API de email não configurada');
+          return;
+        }
+        
+        fetch(EMAIL_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            pdf: pdfBase64,
+            destinatarios: recipients,
+            assunto: subject,
+            corpo: emailBody,
+            filename: filename,
+            remetente: co.name
+          })
+        })
+        .then(function(resp) { return resp.json(); })
+        .then(function(result) {
+          document.getElementById('generating').classList.remove('active');
+          if (result.success) {
+            document.getElementById('sendModalTitle').textContent = 'Enviado!';
+            document.getElementById('sendModalBody').innerHTML = 
+              '<div style="text-align:center;color:#2a7d4f;font-size:40px;margin:10px 0;">&#10003;</div>' +
+              '<p style="text-align:center;font-weight:600;">Email enviado com sucesso!</p>' +
+              '<p style="color:#6b6b80;font-size:13px;margin-top:8px;">' +
+              'PDF enviado para:<br>' + recipients.map(function(e){return '&bull; '+e;}).join('<br>') +
+              '</p>';
+          } else {
+            document.getElementById('sendModalTitle').textContent = 'Resultado';
+            var msg = '<p>Enviados: ' + (result.enviados || 0) + '</p>';
+            if (result.erros && result.erros.length > 0) {
+              msg += '<p style="color:#c0392b;">Erros:<br>' + result.erros.join('<br>') + '</p>';
+            }
+            if (result.error) {
+              msg += '<p style="color:#c0392b;">Erro: ' + result.error + '</p>';
+            }
+            document.getElementById('sendModalBody').innerHTML = msg;
+          }
+          document.getElementById('sendModal').classList.add('active');
+        })
+        .catch(function(err) {
+          document.getElementById('generating').classList.remove('active');
+          document.getElementById('sendModalTitle').textContent = 'Erro';
+          document.getElementById('sendModalBody').innerHTML = 
+            '<p style="color:#c0392b;">Não foi possível enviar o email.</p>' +
+            '<p style="font-size:13px;color:#6b6b80;">O PDF foi guardado no dispositivo.</p>' +
+            '<p style="font-size:12px;color:#999;">Erro: ' + err.message + '</p>';
+          document.getElementById('sendModal').classList.add('active');
+        });
         
       } else {
         // DOWNLOAD MODE: just save the PDF
@@ -1738,9 +1779,32 @@ function generatePDF(shareMode) {
   }); // end waitForJsPDF
 }
 
-// ====== SHARE VIA EMAIL ======
+// ====== EMAIL VIA GOOGLE APPS SCRIPT ======
+// URL da API - configurar após criar o Google Apps Script
+// Instruções em SETUP_EMAIL_API.md
+var EMAIL_API_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AWDtjMXHomDD-SaW5lKLVvj7zm3vfTyw4iGCLoFSNf9o9mTdgibh5R0iUSZx64i0Sdr23x7Y4eVzao8IRarMNemJBVtmkcjoxyMnHY2UQF4r7TMI5LkEn5igrLJqZ45gilM-UsgmkdpoZAWJK9uIyPa93tznDCzjjj0G24KLGeYxcgYkvBeS6G9Zw6MqYUYXr4Dg1Af_51hGcUfZyT-6k1wQoG4EMuNS1AjA6FbWQeDxUBzcm_-wQJQHxwq_3PQaaZFVy8eOvDkMuUS9-qsUKqqInY490kWW3Q&lib=MnOvRPB1wJp2n5Y4A4mXDCnI2RTPCmxy0';
+
+// Detectar API URL dos parâmetros da URL (para facilitar configuração)
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var apiUrl = params.get('api');
+  if (apiUrl) EMAIL_API_URL = apiUrl;
+})();
+
 function generateAndShare() {
+  if (!EMAIL_API_URL) {
+    showToast('API de email não configurada. Veja SETUP_EMAIL_API.md');
+    return;
+  }
   generatePDF(true);
+}
+
+function showSendModal() {
+  document.getElementById('sendModal').classList.add('active');
+}
+
+function closeSendModal() {
+  document.getElementById('sendModal').classList.remove('active');
 }
 
 function savePDFLocal(pdfBlob, filename, isIOS) {
@@ -1756,58 +1820,6 @@ function savePDFLocal(pdfBlob, filename, isIOS) {
     document.body.removeChild(link);
   }
   setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 15000);
-}
-
-function showSendModal(recipients) {
-  var recHtml = '<strong>Para:</strong> ' + (recipients.length > 0 ? recipients.join(', ') : '(nenhum email definido)');
-  document.getElementById('sendRecipients').innerHTML = recHtml;
-  document.getElementById('sendModal').classList.add('active');
-}
-
-function closeSendModal() {
-  document.getElementById('sendModal').classList.remove('active');
-}
-
-function sendViaGmail() {
-  var sd = window._sendData;
-  if (!sd) return;
-  var to = sd.recipients.join(',');
-  // Gmail compose URL - works on mobile and desktop
-  // Use %0A for newlines (not \n) in the body
-  var bodyEncoded = sd.body.replace(/\n/g, '%0A');
-  var url = 'https://mail.google.com/mail/?view=cm&fs=1' +
-    '&to=' + encodeURIComponent(to) +
-    '&su=' + encodeURIComponent(sd.subject) +
-    '&body=' + bodyEncoded + '%0A%0A(Anexe o PDF descarregado antes de enviar)';
-  window.open(url, '_blank');
-  closeSendModal();
-  showToast('Gmail aberto. Anexe o PDF.');
-}
-
-function sendViaOutlook() {
-  var sd = window._sendData;
-  if (!sd) return;
-  var to = sd.recipients.join(';');
-  // Outlook web compose URL
-  var bodyEncoded = sd.body.replace(/\n/g, '%0A');
-  var url = 'https://outlook.live.com/mail/0/deeplink/compose?to=' + encodeURIComponent(to) +
-    '&subject=' + encodeURIComponent(sd.subject) +
-    '&body=' + bodyEncoded + '%0A%0A(Anexe o PDF descarregado antes de enviar)';
-  window.open(url, '_blank');
-  closeSendModal();
-  showToast('Outlook aberto. Anexe o PDF.');
-}
-
-function sendViaMailto() {
-  var sd = window._sendData;
-  if (!sd) return;
-  var to = sd.recipients.join(',');
-  var url = 'mailto:' + to +
-    '?subject=' + encodeURIComponent(sd.subject) +
-    '&body=' + encodeURIComponent(sd.body + '\n\n(Anexe o PDF descarregado antes de enviar)');
-  window.location.href = url;
-  closeSendModal();
-  showToast('App de email aberta. Anexe o PDF.');
 }
 
 // Init

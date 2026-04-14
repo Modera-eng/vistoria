@@ -433,7 +433,7 @@ function enviarEmail() {
   var d = getDados();
   var empNome = selectedEmpresa === 'modera' ? 'Modera Engenharia' : 'Plataforma Técnica';
   
-  var assunto = 'Vistoria - Processo ' + d.processo + ' - ' + d.nome;
+  var assunto = 'Vistoria - Processo ' + d.certificado + ' - ' + d.nome;
   var corpo = 'Olá ' + perito.nome + ',\n\n' +
     'Tens uma vistoria agendada (' + empNome + '):\n\n' +
     'Processo: ' + d.processo + '\n' +
@@ -531,7 +531,7 @@ function criarEventoCalendario() {
   }
   
   // End date = start + 2 hours
-  var endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
+  var endDate = new Date(startDate.getTime() + 1 * 60 * 60 * 1000);
   
   var empNome = selectedEmpresa === 'modera' ? 'Modera' : 'Plat. Técnica';
   var title = 'Vistoria ' + empNome + ' - ' + d.processo + ' - ' + d.nome;

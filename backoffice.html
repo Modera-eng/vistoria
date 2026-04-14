@@ -530,7 +530,7 @@ function criarEventoCalendario() {
     return;
   }
   
-  // End date = start + 2 hours
+  // End date = start + 1 hours
   var endDate = new Date(startDate.getTime() + 1 * 60 * 60 * 1000);
   
   var empNome = selectedEmpresa === 'modera' ? 'Modera' : 'Plat. Técnica';

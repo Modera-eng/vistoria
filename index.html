@@ -1028,7 +1028,6 @@ function prefillFromURL() {
       var el = document.getElementById(fieldMap[key]);
       if (el) {
         if (el.tagName === 'SELECT') {
-          // Try to match option
           for (var i = 0; i < el.options.length; i++) {
             if (el.options[i].value.toLowerCase() === val.toLowerCase()) {
               el.selectedIndex = i;
@@ -1041,6 +1040,28 @@ function prefillFromURL() {
       }
     }
   }
+  
+  // Pre-fill tomador signature name with the tomador name
+  var nomeTomador = params.get('nome');
+  if (nomeTomador) {
+    var sigField = document.getElementById('nomeTomadorSig');
+    if (sigField && !sigField.value) {
+      sigField.value = nomeTomador;
+    }
+  }
+  
+  // Pre-fill declarations with default text using date and name
+  var dataPeritagem = params.get('dataPeritagem');
+  if (dataPeritagem && nomeTomador) {
+    var declField = document.getElementById('declaracoes');
+    if (declField && !declField.value) {
+      // Extract just the date part (dd/MM/yyyy) from "dd/MM/yyyy HH:mm"
+      var dataParts = dataPeritagem.split(' ');
+      var dataStr = dataParts[0] || dataPeritagem;
+      declField.value = 'No dia ' + dataStr + ' deslocamo-nos ao local de risco e fomos recebidos pelo tomador de seguro ' + nomeTomador + '. ';
+    }
+  }
+  
   // Trigger empresa update
   updateEmpresa();
 }
@@ -1660,7 +1681,7 @@ function generatePDF(shareMode) {
       buildPDFContent(doc, d);
 
       // Save
-      var filename = 'Auto_Vistoria_' + (d.nCertificado || 'rascunho') + '_' + d.data.replace(/\//g, '-') + '.pdf';
+      var filename = 'Auto_Vistoria_' + (d.nProcesso || 'rascunho') + '_' + d.data.replace(/\//g, '-') + '.pdf';
       // Save/Share PDF
       var pdfBlob = doc.output('blob');
       var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 

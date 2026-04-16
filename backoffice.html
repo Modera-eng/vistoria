@@ -248,7 +248,7 @@
 // ============================================================
 // CONFIG - URL da app de vistoria (GitHub Pages)
 // ============================================================
-var VISTORIA_URL = "https://modera-eng.github.io/vistoria/index.html";
+var VISTORIA_URL = "https://TEUUSER.github.io/vistoria/index.html";
 
 // ============================================================
 // STATE
@@ -380,6 +380,7 @@ function gerarLink() {
   if (d.contacto) params.push('contacto=' + encodeURIComponent(d.contacto));
   if (d.email) params.push('email=' + encodeURIComponent(d.email));
   if (d.qualidade) params.push('qualidade=' + encodeURIComponent(d.qualidade));
+  if (d.dataPeritagem) params.push('dataPeritagem=' + encodeURIComponent(d.dataPeritagem));
   if (perito) {
     params.push('perito=' + encodeURIComponent(perito.nome));
     if (perito.email) params.push('emailPerito=' + encodeURIComponent(perito.email));
@@ -433,7 +434,7 @@ function enviarEmail() {
   var d = getDados();
   var empNome = selectedEmpresa === 'modera' ? 'Modera Engenharia' : 'Plataforma Técnica';
   
-  var assunto = 'Vistoria - Processo ' + d.certificado + ' - ' + d.nome;
+  var assunto = 'Vistoria - Processo ' + d.processo + ' - ' + d.nome;
   var corpo = 'Olá ' + perito.nome + ',\n\n' +
     'Tens uma vistoria agendada (' + empNome + '):\n\n' +
     'Processo: ' + d.processo + '\n' +
@@ -530,11 +531,11 @@ function criarEventoCalendario() {
     return;
   }
   
-  // End date = start + 1 hours
-  var endDate = new Date(startDate.getTime() + 1 * 60 * 60 * 1000);
+  // End date = start + 2 hours
+  var endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
   
   var empNome = selectedEmpresa === 'modera' ? 'Modera' : 'Plat. Técnica';
-  var title = 'Vistoria ' + empNome + ' - ' + d.certificado + ' - ' + d.nome;
+  var title = 'Vistoria ' + empNome + ' - ' + d.processo + ' - ' + d.nome;
   
   var details = 'Processo: ' + d.processo + '\n' +
     'Certificado: ' + (d.certificado || '-') + '\n' +

@@ -1871,6 +1871,9 @@ function generatePDF(shareMode) {
         
         // Add observations page for perito version
         if (d.observacoes) {
+          var pageW = 210;
+          var lM = 20;
+          var rM = 190;
           doc.addPage();
           var yObs = 20;
           doc.setFont(undefined, 'bold');
@@ -1984,7 +1987,7 @@ function generatePDF(shareMode) {
 }
 
 // ====== EMAIL VIA GOOGLE APPS SCRIPT ======
-var EMAIL_API_URL = 'https://script.google.com/macros/s/AKfycbzhdt5OCm1v6tB5S8BwD8Qt1RLnOQJyiImTe64BB5P6tO636SzLXGz7reUqZ9NqEkYo/exec';
+var EMAIL_API_URL = '';
 
 (function() {
   var params = new URLSearchParams(window.location.search);

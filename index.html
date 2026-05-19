@@ -701,6 +701,2082 @@ function waitForJsPDF(callback, maxWait) {
   <!-- SECTION 0: Dados do Processo -->
   <div class="section active" id="sec-0">
     <h2 class="section-title">Dados do Processo</h2>
+    <p class="section-desc">Informações gerais do processo.</p>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">🏢</span> Empresa</div>
+      <div class="form-group">
+        <label class="form-label">Empresa <span class="required">*</span></label>
+        <select class="form-select" id="empresa" onchange="updateEmpresa()">
+          <option value="modera">Modera Engenharia</option>
+          <option value="plataforma">Plataforma Técnica</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">🔖</span> Processo</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nº Processo <span class="required">*</span></label>
+          <input class="form-input" id="nProcesso" placeholder="226284971">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nº Certificado</label>
+          <input class="form-input" id="nCertificado" placeholder="260868">
+        </div>
+      </div>
+    </div>
+
+    <!-- Tipo de auto -->
+    <div class="card">
+      <div class="card-title"><span class="icon">👥</span> Tipo de Auto</div>
+      <p style="font-size:13px;color:#6b6b80;margin-bottom:12px;">Está a fazer o auto de vistoria para:</p>
+      <div style="display:flex;gap:10px;">
+        <div class="empresa-opt active" id="tipoSinistrado" onclick="setTipoAuto('sinistrado')" style="flex:1;padding:16px;border-radius:10px;cursor:pointer;">
+          <div style="font-size:24px;margin-bottom:4px;">🏠</div>
+          <div style="font-weight:700;font-size:14px;">Sinistrado</div>
+          <div style="font-size:11px;color:#6b6b80;margin-top:2px;">Tomador do seguro</div>
+        </div>
+        <div class="empresa-opt" id="tipoLesado" onclick="setTipoAuto('lesado')" style="flex:1;padding:16px;border-radius:10px;cursor:pointer;">
+          <div style="font-size:24px;margin-bottom:4px;">👤</div>
+          <div style="font-weight:700;font-size:14px;">Lesado</div>
+          <div style="font-size:11px;color:#6b6b80;margin-top:2px;">Terceiro lesado</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Identificação (muda conforme tipo) -->
+    <div class="card">
+      <div class="card-title"><span class="icon">📋</span> <span id="identificacaoLabel">Identificação do Sinistrado</span></div>
+      <div class="form-group">
+        <label class="form-label" id="nomeLabel">Nome do Tomador <span class="required">*</span></label>
+        <input class="form-input" id="nome" placeholder="Nome completo">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Morada</label>
+        <input class="form-input" id="morada" placeholder="Rua, número, código postal, localidade">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">NIF / C.C.</label>
+          <input class="form-input" id="nif" placeholder="000000000" inputmode="numeric">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contacto</label>
+          <input class="form-input" id="contacto" placeholder="Telefone" inputmode="tel">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="emailContacto" placeholder="email@exemplo.pt" inputmode="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Na Qualidade de</label>
+        <select class="form-select" id="qualidade">
+          <option value="">Selecionar...</option>
+          <option value="Proprietário">Proprietário</option>
+          <option value="Inquilino">Inquilino</option>
+          <option value="Arrendatário">Arrendatário</option>
+          <option value="Representante Legal">Representante Legal</option>
+          <option value="Lesado">Lesado</option>
+          <option value="Outro">Outro</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: Declarações -->
+  <div class="section" id="sec-1">
+    <h2 class="section-title">Declarações da Vistoria</h2>
+    <p class="section-desc">Descreva o que foi observado durante a vistoria.</p>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">🔍</span> Declarações</div>
+      <div class="form-group">
+        <label class="form-label">Declarações que nos foram prestadas <span class="required">*</span></label>
+        <textarea class="form-textarea" id="declaracoes" placeholder="Descreva de forma sucinta os danos observados, as condições do local, e quaisquer declarações relevantes..." rows="8"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: Observações Internas (só para o perito) -->
+  <div class="section" id="sec-2">
+    <h2 class="section-title">Observações Internas</h2>
+    <p class="section-desc">Notas internas que só são enviadas ao perito. Não constam no relatório do segurado/lesado.</p>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">📝</span> Notas do Perito</div>
+      <div class="form-group">
+        <label class="form-label">Observações adicionais</label>
+        <textarea class="form-textarea" id="observacoes" placeholder="Notas internas, contexto, próximos passos... (apenas visível no relatório do perito)" rows="6" style="min-height:120px;"></textarea>
+      </div>
+      <p style="font-size:11px;color:#999;margin-top:8px;">⚠️ Estas observações só são incluídas no PDF enviado ao perito. O relatório enviado ao segurado e lesados não inclui esta secção.</p>
+    </div>
+  </div>
+
+  <!-- SECTION 3: Documentos em Falta -->
+  <div class="section" id="sec-3">
+    <h2 class="section-title">Documentos em Falta</h2>
+    <p class="section-desc">Selecione os documentos que são necessários para completar o processo.</p>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">📄</span> Documentação Pendente</div>
+      <div class="doc-checklist" id="docChecklist">
+        <!-- Generated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4: Assinaturas -->
+  <div class="section" id="sec-4">
+    <h2 class="section-title">Assinaturas</h2>
+    <p class="section-desc">Recolha a assinatura do perito e do tomador/acompanhante.</p>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">✍️</span> Assinatura do Perito</div>
+      <div class="form-group">
+        <label class="form-label">Nome do Perito <span class="required">*</span></label>
+        <input class="form-input" id="nomePerito" placeholder="Nome do perito">
+      </div>
+      <div class="signature-area">
+        <label class="form-label">Assinatura <span class="required">*</span></label>
+        <div class="signature-canvas-wrap" id="sigWrapPerito">
+          <canvas class="signature-canvas" id="sigPerito"></canvas>
+          <div class="signature-placeholder">Assine aqui com o dedo ou caneta</div>
+        </div>
+        <div class="signature-actions">
+          <button class="btn-sig-clear" onclick="clearSignature('sigPerito')">Limpar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">👤</span> <span id="sigTomadorLabel">Assinatura do Tomador</span></div>
+      <div class="form-group">
+        <label class="form-label">Nome</label>
+        <input class="form-input" id="nomeTomadorSig" placeholder="Nome de quem acompanhou a vistoria">
+      </div>
+      <div class="signature-area">
+        <label class="form-label">Assinatura</label>
+        <div class="signature-canvas-wrap" id="sigWrapTomador">
+          <canvas class="signature-canvas" id="sigTomador"></canvas>
+          <div class="signature-placeholder">Assine aqui com o dedo ou caneta</div>
+        </div>
+        <div class="signature-actions">
+          <button class="btn-sig-clear" onclick="clearSignature('sigTomador')">Limpar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5: Envio -->
+  <div class="section" id="sec-5">
+    <h2 class="section-title">Enviar Relatório</h2>
+    <p class="section-desc">Reveja os dados e envie o relatório em PDF por email.</p>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">📧</span> Destinatários</div>
+      <div class="form-group">
+        <label class="form-label">Email do Contacto</label>
+        <div class="email-tag-area" id="emailContactoTag"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email do Perito</label>
+        <input class="form-input" id="emailPerito" placeholder="perito@modera-engenharia.com" inputmode="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Geral</label>
+        <input class="form-input" id="emailGeral" value="geral@modera-engenharia.com" inputmode="email">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">🔒</span> Proteção de Dados (RGPD)</div>
+      <label class="doc-check-item" id="rgpdCheckItem" onclick="toggleRgpd(event)">
+        <input type="checkbox" id="rgpdAutorizo">
+        <div class="doc-check-box">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div>
+          <span class="doc-check-label">Autorizo o tratamento dos dados pessoais, incluindo dados sensíveis, para realização da peritagem nos termos do RGPD 2016/679.</span>
+        </div>
+      </label>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">👁️</span> Pré-visualização</div>
+      <div id="previewContent"></div>
+      <button class="btn btn-secondary" style="margin-top:16px;" onclick="showPreviewModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Ver resumo completo
+      </button>
+    </div>
+  </div>
+</main>
+
+<!-- Bottom Navigation -->
+<div class="bottom-nav">
+  <button class="btn btn-secondary" id="btnPrev" onclick="prevSection()" style="display:none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5m7-7l-7 7 7 7"/></svg>
+    Anterior
+  </button>
+  <button class="btn btn-primary" id="btnNext" onclick="nextSection()">
+    Seguinte
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-7-7l7 7-7 7"/></svg>
+  </button>
+  <button class="btn btn-success" id="btnGenerate" onclick="generatePDF()" style="display:none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
+    Gerar PDF
+  </button>
+  <button class="btn btn-primary" id="btnSendEmail" onclick="generateAndShare()" style="display:none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+    Enviar Email
+  </button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Preview modal -->
+<div class="modal-overlay" id="previewModal">
+  <div class="modal-content">
+    <div class="modal-title">
+      Resumo do Relatório
+      <button class="modal-close" onclick="closePreviewModal()">×</button>
+    </div>
+    <div id="modalPreviewBody"></div>
+  </div>
+</div>
+
+<!-- Send modal - resultado do envio -->
+<div class="modal-overlay" id="sendModal">
+  <div class="modal-content">
+    <div class="modal-title">
+      <span id="sendModalTitle">A enviar...</span>
+      <button class="modal-close" onclick="closeSendModal()">×</button>
+    </div>
+    <div id="sendModalBody" style="font-size:14px;line-height:1.6;"></div>
+    <div style="margin-top:16px;text-align:center;">
+      <button class="btn btn-secondary" onclick="closeSendModal()" style="display:inline-flex;">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Generating overlay -->
+<div class="generating" id="generating">
+  <div class="spinner"></div>
+  <p>A gerar o PDF...</p>
+</div>
+
+<script>
+// Documents list
+const DOCUMENTS = [
+  "Orçamento(s) discriminado por valores das reparações a efetuar",
+  "Caderneta Predial",
+  "Comprovativo de IBAN (Instituição Bancária)",
+  "Identificação completa do senhorio / Lesante, e da sua Seguradora",
+  "Ação de Pesquisa (Inicialmente não destrutiva)",
+  "Certidão da denúncia, passada pelas autoridades (GNR / PSP / PJ)",
+  "Lista anexa à queixa crime carimbada pelas autoridades policiais",
+  "Comprovativos / Fatura(s) de aquisição dos bens reclamados",
+  "Mapa de imobilizado",
+  "Inventário das mercadorias à data do sinistro",
+  "Declaração do senhorio",
+  "Fichas do custo de produção dos artigos reclamados",
+  "Guias de remessa / Transporte",
+  "Declarações do IVA / Balancetes gerais analíticos / IES",
+  "Relação de bens devidamente discriminada e valorizada unitariamente",
+  "Fotografias",
+  "Proposta escrita para compra / desinteresse dos salvados",
+  "Outros"
+];
+
+const LOGO_BASE64 = "data:image/jpeg;base64,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Z+6WK5XG822tZdIYaegf2opjTF4keWlpJO4YwCcYHGc8qdXabk1PY32xlWyk3vY7tTF2jmbTkbfrDBz3q+RBnLxp243vSUljqbpCJp2COeqFMfrNz1Dd3Djgd+Oqms0vJW0dC+aubFdbec01dTw7dvGCCwk5aR1Gee7C0SIM3qPTdx1HaaeifcqeldHKyaR7KYvDnsOW4BeMDPmumobFc77bYKJt0gpgHtkqCKUvExaQ4NwXjDSRyMk92VoVCCuu1tludjqbeZYWvqYTE974i5nIwfq7h4nAyvNpezVths8Nsq7i2vbTAMhl7Hs3bB0B5OcdMq7UIMA71j5lEd6x8yi14Y89RERdE9yhT3KEBERA7it5D7Fn3R+SwfcVvIfYs+6PyVPVdlzTd3RERU1wREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQfP3esfMourom7zyepTsm+JWtEsiY+3JF17JviU7JviV3Jhz7lC69mOmSnZN8SmTDki69k3xKdk3xKZMOXcVvIfYs+6PyWI7IeJW3h9iz7oVPVdlvTd3RERVFwREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQf/9k=";
+
+let currentSection = 0;
+const totalSections = 5;
+const signatures = { sigPerito: { drawing: false, hasData: false }, sigTomador: { drawing: false, hasData: false } };
+
+// Init documents checklist
+const LOGO_PT_BASE64 = "data:image/jpeg;base64,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";
+
+// Company configurations
+const COMPANIES = {
+  modera: {
+    name: 'Modera Engenharia, Lda.',
+    logo: LOGO_BASE64,
+    logoW: 53,
+    logoH: 14.5,
+    footer1: 'Modera Engenharia, Lda. – Rua Antero de Quental, 221 Sala 104 - 4455 – 586 Perafita MTS',
+    footer2: 'tlf 22 954 51 53 - email geral@modera-engenharia.com – site www.modera-engenharia.com',
+    email: 'geral@modera-engenharia.com',
+    rgpdEntity: 'MODERA-ENGENHARIA, Lda',
+    privacy: 'http://www.modera-engenharia.com'
+  },
+  plataforma: {
+    name: 'Aggregate Domain Lda. (Plataforma Técnica)',
+    logo: LOGO_PT_BASE64,
+    logoW: 45,
+    logoH: 20,
+    footer1: 'Aggregate Domain Lda. – Rua Antero de Quental, 221 Sala 104 - 4455 – 586 Perafita MTS',
+    footer2: 'Tlf 220 962 415 (Chamada para a rede fixa nacional) – email geral@plataformatecnica.pt',
+    email: 'geral@plataformatecnica.pt',
+    rgpdEntity: 'MODERA-ENGENHARIA, Lda',
+    privacy: 'http://www.modera-engenharia.com'
+  }
+};
+
+function updateEmpresa() {
+  var sel = document.getElementById('empresa').value;
+  var co = COMPANIES[sel];
+  var brand = document.getElementById('headerBrand');
+  if (brand) brand.textContent = co.name;
+  var emailGeral = document.getElementById('emailGeral');
+  if (emailGeral) emailGeral.value = co.email;
+}
+
+// ====== TIPO DE AUTO (Sinistrado / Lesado) ======
+var tipoAuto = 'sinistrado';
+var dadosSinistrado = {};
+var savedDataPeritagem = ''; // saved from URL params
+
+function setTipoAuto(tipo) {
+  tipoAuto = tipo;
+  document.getElementById('tipoSinistrado').className = 'empresa-opt' + (tipo === 'sinistrado' ? ' active' : '');
+  document.getElementById('tipoLesado').className = 'empresa-opt' + (tipo === 'lesado' ? ' active' : '');
+  
+  var sigLabel = document.getElementById('sigTomadorLabel');
+  
+  if (tipo === 'sinistrado') {
+    document.getElementById('identificacaoLabel').textContent = 'Identificação do Sinistrado';
+    document.getElementById('nomeLabel').innerHTML = 'Nome do Tomador <span class="required">*</span>';
+    if (sigLabel) sigLabel.textContent = 'Assinatura do Tomador';
+    // Restore sinistrado data
+    if (dadosSinistrado.nome) {
+      document.getElementById('nome').value = dadosSinistrado.nome || '';
+      document.getElementById('morada').value = dadosSinistrado.morada || '';
+      document.getElementById('nif').value = dadosSinistrado.nif || '';
+      document.getElementById('contacto').value = dadosSinistrado.contacto || '';
+      document.getElementById('emailContacto').value = dadosSinistrado.email || '';
+      document.getElementById('nomeTomadorSig').value = dadosSinistrado.nome || '';
+    }
+    document.getElementById('qualidade').value = dadosSinistrado.qualidade || 'Proprietário';
+    // Restore declarations
+    var dataStr = savedDataPeritagem ? savedDataPeritagem.split(' ')[0] : '';
+    var declField = document.getElementById('declaracoes');
+    if (declField) {
+      if (dataStr && dadosSinistrado.nome) {
+        declField.value = 'No dia ' + dataStr + ' deslocamo-nos ao local de risco e fomos recebidos pelo tomador de seguro ' + dadosSinistrado.nome + '. ';
+      } else if (dadosSinistrado.nome) {
+        declField.value = 'Deslocamo-nos ao local de risco e fomos recebidos pelo tomador de seguro ' + dadosSinistrado.nome + '. ';
+      }
+    }
+  } else {
+    // Save sinistrado data before clearing
+    dadosSinistrado.nome = document.getElementById('nome').value;
+    dadosSinistrado.morada = document.getElementById('morada').value;
+    dadosSinistrado.nif = document.getElementById('nif').value;
+    dadosSinistrado.contacto = document.getElementById('contacto').value;
+    dadosSinistrado.email = document.getElementById('emailContacto').value;
+    dadosSinistrado.qualidade = document.getElementById('qualidade').value;
+    
+    document.getElementById('identificacaoLabel').textContent = 'Identificação do Lesado';
+    document.getElementById('nomeLabel').innerHTML = 'Nome do Lesado <span class="required">*</span>';
+    if (sigLabel) sigLabel.textContent = 'Assinatura do Lesado';
+    // Clear fields for lesado input
+    document.getElementById('nome').value = '';
+    document.getElementById('morada').value = '';
+    document.getElementById('nif').value = '';
+    document.getElementById('contacto').value = '';
+    document.getElementById('emailContacto').value = '';
+    document.getElementById('qualidade').value = 'Lesado';
+    document.getElementById('nomeTomadorSig').value = '';
+    // Clear signatures
+    clearSignature('sigPerito');
+    clearSignature('sigTomador');
+    // Clear declarations and observations
+    document.getElementById('declaracoes').value = '';
+    document.getElementById('observacoes').value = '';
+  }
+}
+
+// Listen for lesado name changes to update signature name and declarations
+function setupLesadoAutoFill() {
+  var nomeField = document.getElementById('nome');
+  if (!nomeField) return;
+  nomeField.addEventListener('input', function() {
+    if (tipoAuto !== 'lesado') return;
+    var lesadoNome = nomeField.value.trim();
+    // Auto-fill signature name
+    document.getElementById('nomeTomadorSig').value = lesadoNome;
+    // Auto-fill declarations if empty or still has default pattern
+    var declField = document.getElementById('declaracoes');
+    var currentDecl = declField.value;
+    if (!currentDecl || currentDecl.indexOf('deslocamo-nos ao local de risco') !== -1) {
+      var dataStr = savedDataPeritagem ? savedDataPeritagem.split(' ')[0] : '';
+      if (dataStr && lesadoNome) {
+        declField.value = 'No dia ' + dataStr + ' deslocamo-nos ao local de risco e fomos recebidos pelo lesado ' + lesadoNome + '. ';
+      } else if (lesadoNome) {
+        declField.value = 'Deslocamo-nos ao local de risco e fomos recebidos pelo lesado ' + lesadoNome + '. ';
+      }
+    }
+  });
+}
+
+function toggleRgpd(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  var cb = document.getElementById('rgpdAutorizo');
+  cb.checked = !cb.checked;
+  var item = document.getElementById('rgpdCheckItem');
+  item.classList.toggle('checked', cb.checked);
+}
+
+// URL params pre-fill
+function prefillFromURL() {
+  var params = new URLSearchParams(window.location.search);
+  
+  // Debug: log all URL params received
+  console.log('=== Prefill Debug ===');
+  console.log('URL:', window.location.href);
+  console.log('dataPeritagem param:', params.get('dataPeritagem'));
+  console.log('nome param:', params.get('nome'));
+  
+  var fieldMap = {
+    nome: 'nome', morada: 'morada', nif: 'nif', contacto: 'contacto',
+    email: 'emailContacto', processo: 'nProcesso', certificado: 'nCertificado',
+    qualidade: 'qualidade', empresa: 'empresa', perito: 'nomePerito',
+    emailPerito: 'emailPerito'
+  };
+  for (var key in fieldMap) {
+    var val = params.get(key);
+    if (val) {
+      var el = document.getElementById(fieldMap[key]);
+      if (el) {
+        if (el.tagName === 'SELECT') {
+          for (var i = 0; i < el.options.length; i++) {
+            if (el.options[i].value.toLowerCase() === val.toLowerCase()) {
+              el.selectedIndex = i;
+              break;
+            }
+          }
+        } else {
+          el.value = val;
+        }
+      }
+    }
+  }
+  
+  // Pre-fill tomador signature name with the tomador name
+  var nomeTomador = params.get('nome');
+  if (nomeTomador) {
+    var sigField = document.getElementById('nomeTomadorSig');
+    if (sigField && !sigField.value) {
+      sigField.value = nomeTomador;
+    }
+  }
+  
+  // Save sinistrado data for reuse when switching to lesado
+  dadosSinistrado = {
+    nome: document.getElementById('nome').value,
+    morada: document.getElementById('morada').value,
+    nif: document.getElementById('nif').value,
+    contacto: document.getElementById('contacto').value,
+    email: document.getElementById('emailContacto').value,
+    qualidade: document.getElementById('qualidade').value
+  };
+  
+  // Pre-fill declarations with default text using date and name
+  var dataPeritagem = params.get('dataPeritagem');
+  savedDataPeritagem = dataPeritagem || '';
+  console.log('=== Prefill Debug ===');
+  console.log('dataPeritagem:', dataPeritagem, 'nome:', nomeTomador);
+  
+  if (dataPeritagem && nomeTomador) {
+    var declField = document.getElementById('declaracoes');
+    if (declField && !declField.value) {
+      var dataParts = dataPeritagem.split(' ');
+      var dataStr = dataParts[0] || dataPeritagem;
+      declField.value = 'No dia ' + dataStr + ' deslocamo-nos ao local de risco e fomos recebidos pelo tomador de seguro ' + nomeTomador + '. ';
+    }
+  } else if (nomeTomador) {
+    var declField = document.getElementById('declaracoes');
+    if (declField && !declField.value) {
+      declField.value = 'Deslocamo-nos ao local de risco e fomos recebidos pelo tomador de seguro ' + nomeTomador + '. ';
+    }
+  }
+  
+  // Trigger empresa update
+  updateEmpresa();
+}
+
+function initChecklist() {
+  const container = document.getElementById('docChecklist');
+  DOCUMENTS.forEach((doc, i) => {
+    const isOutros = doc === "Outros";
+    const item = document.createElement('label');
+    item.className = 'doc-check-item';
+    item.innerHTML = `
+      <input type="checkbox" value="${doc}" data-index="${i}">
+      <div class="doc-check-box">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div>
+        <span class="doc-check-label">${doc}</span>
+        ${isOutros ? '<input class="doc-outros-input form-input" id="outrosText" placeholder="Especifique...">' : ''}
+      </div>
+    `;
+    item.addEventListener('click', (e) => {
+      if (e.target.classList.contains('doc-outros-input')) return;
+      const cb = item.querySelector('input[type="checkbox"]');
+      cb.checked = !cb.checked;
+      item.classList.toggle('checked', cb.checked);
+    });
+    container.appendChild(item);
+  });
+}
+
+// Navigation
+function goToSection(idx) {
+  if (idx < 0 || idx >= totalSections) return;
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(`sec-${idx}`).classList.add('active');
+  currentSection = idx;
+  updateNav();
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (idx === 4) buildPreview();
+  // Reinit signature canvases when their section becomes visible
+  if (idx === 3) {
+    // Update tomador label based on qualidade
+    const qual = document.getElementById('qualidade').value;
+    const labelEl = document.getElementById('sigTomadorLabel');
+    if (labelEl) {
+      labelEl.textContent = 'Assinatura ' + (qual ? 'do ' + qual : 'do Tomador');
+    }
+    setTimeout(() => {
+      const sp = document.getElementById('sigPerito');
+      const st = document.getElementById('sigTomador');
+      if (sp && sp._reinit) sp._reinit();
+      if (st && st._reinit) st._reinit();
+    }, 80);
+  }
+}
+
+function nextSection() {
+  if (currentSection < totalSections - 1) goToSection(currentSection + 1);
+}
+
+function prevSection() {
+  if (currentSection > 0) goToSection(currentSection - 1);
+}
+
+function updateNav() {
+  document.getElementById('btnPrev').style.display = currentSection === 0 ? 'none' : 'flex';
+  document.getElementById('btnNext').style.display = currentSection === totalSections - 1 ? 'none' : 'flex';
+  document.getElementById('btnGenerate').style.display = currentSection === totalSections - 1 ? 'flex' : 'none';
+  document.getElementById('btnSendEmail').style.display = currentSection === totalSections - 1 ? 'flex' : 'none';
+}
+
+function updateProgress() {
+  document.querySelectorAll('.progress-step').forEach((s, i) => {
+    s.classList.remove('active', 'completed');
+    if (i === currentSection) s.classList.add('active');
+    else if (i < currentSection) s.classList.add('completed');
+  });
+}
+
+// Signature Handling
+function initSignature(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  const wrap = canvas.parentElement;
+  const ctx = canvas.getContext('2d');
+  let isDrawing = false;
+  let lastX, lastY;
+  let initialized = false;
+
+  function setupCanvas() {
+    const w = wrap.offsetWidth || wrap.clientWidth;
+    if (w < 10) return false; // still hidden
+    const ratio = window.devicePixelRatio || 1;
+    // Save existing drawing if any
+    let imgData = null;
+    if (initialized && signatures[canvasId].hasData) {
+      try { imgData = canvas.toDataURL(); } catch(e) {}
+    }
+    canvas.width = w * ratio;
+    canvas.height = 180 * ratio;
+    canvas.style.width = w + 'px';
+    canvas.style.height = '180px';
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    ctx.strokeStyle = '#1a1a2e';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    // Restore drawing
+    if (imgData && signatures[canvasId].hasData) {
+      const img = new Image();
+      img.onload = () => {
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.drawImage(img, 0, 0);
+        ctx.restore();
+      };
+      img.src = imgData;
+    }
+    initialized = true;
+    return true;
+  }
+
+  // Try setup now, but it will likely fail since section is hidden
+  setupCanvas();
+
+  // Re-setup when window resizes
+  window.addEventListener('resize', () => { if (initialized) setupCanvas(); });
+
+  // Expose a reinit function we can call when section becomes visible
+  canvas._reinit = function() {
+    if (!initialized || wrap.offsetWidth < 10) {
+      setTimeout(() => setupCanvas(), 50);
+    } else {
+      setupCanvas();
+    }
+  };
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches ? e.touches[0] : e;
+    return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+  }
+
+  function start(e) {
+    e.preventDefault();
+    // Lazy init: if canvas wasn't properly sized, do it now
+    if (!initialized || canvas.width < 10) setupCanvas();
+    isDrawing = true;
+    wrap.classList.add('signing');
+    const pos = getPos(e);
+    lastX = pos.x;
+    lastY = pos.y;
+    // Draw a dot for single taps
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, 1.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function move(e) {
+    if (!isDrawing) return;
+    e.preventDefault();
+    const pos = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    lastX = pos.x;
+    lastY = pos.y;
+    signatures[canvasId].hasData = true;
+    wrap.classList.add('has-signature');
+  }
+
+  function end() {
+    if (isDrawing) {
+      signatures[canvasId].hasData = true;
+      wrap.classList.add('has-signature');
+    }
+    isDrawing = false;
+    wrap.classList.remove('signing');
+  }
+
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  canvas.addEventListener('mouseup', end);
+  canvas.addEventListener('mouseleave', end);
+  canvas.addEventListener('touchstart', start, { passive: false });
+  canvas.addEventListener('touchmove', move, { passive: false });
+  canvas.addEventListener('touchend', end);
+}
+
+function clearSignature(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const ratio = window.devicePixelRatio || 1;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.scale(ratio, ratio);
+  ctx.strokeStyle = '#1a1a2e';
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  signatures[canvasId].hasData = false;
+  canvas.parentElement.classList.remove('has-signature');
+}
+
+// Preview
+function getFormData() {
+  const checkedDocs = [];
+  document.querySelectorAll('#docChecklist input[type="checkbox"]:checked').forEach(cb => {
+    let val = cb.value;
+    if (val === 'Outros') {
+      const outrosEl = document.getElementById('outrosText');
+      const txt = outrosEl ? outrosEl.value : '';
+      if (txt) val = `Outros: ${txt}`;
+    }
+    checkedDocs.push(val);
+  });
+
+  return {
+    nome: document.getElementById('nome').value,
+    morada: document.getElementById('morada').value,
+    nif: document.getElementById('nif').value,
+    contacto: document.getElementById('contacto').value,
+    emailContacto: document.getElementById('emailContacto').value,
+    nProcesso: document.getElementById('nProcesso').value,
+    nCertificado: document.getElementById('nCertificado').value,
+    qualidade: document.getElementById('qualidade').value,
+    declaracoes: document.getElementById('declaracoes').value,
+    observacoes: document.getElementById('observacoes').value,
+    docsEmFalta: checkedDocs,
+    nomePerito: document.getElementById('nomePerito').value,
+    nomeTomadorSig: document.getElementById('nomeTomadorSig').value,
+    emailPerito: document.getElementById('emailPerito').value,
+    emailGeral: document.getElementById('emailGeral').value,
+    empresa: document.getElementById('empresa').value,
+    rgpdAutorizado: document.getElementById('rgpdAutorizo').checked,
+    tipoAuto: tipoAuto,
+    data: new Date().toLocaleDateString('pt-PT'),
+  };
+}
+
+function buildPreview() {
+  const d = getFormData();
+  // Update email contact tag
+  const tagArea = document.getElementById('emailContactoTag');
+  tagArea.innerHTML = d.emailContacto
+    ? `<span class="email-tag">${d.emailContacto}</span>`
+    : '<span style="color:var(--text-light);font-size:13px;">Nenhum email de contacto preenchido</span>';
+
+  const preview = document.getElementById('previewContent');
+  preview.innerHTML = `
+    <div class="preview-item"><div class="preview-label">Processo</div><div class="preview-value">${d.nProcesso || '—'} / Cert. ${d.nCertificado || '—'}</div></div>
+    <div class="preview-item"><div class="preview-label">Tomador</div><div class="preview-value">${d.nome || '—'}</div></div>
+    <div class="preview-item"><div class="preview-label">Perito</div><div class="preview-value">${d.nomePerito || '—'}</div></div>
+    <div class="preview-item"><div class="preview-label">Docs. em falta</div><div class="preview-value">${d.docsEmFalta.length > 0 ? d.docsEmFalta.length + ' documento(s)' : 'Nenhum'}</div></div>
+    <div class="preview-item"><div class="preview-label">Data</div><div class="preview-value">${d.data}</div></div>
+  `;
+}
+
+function showPreviewModal() {
+  const d = getFormData();
+  const body = document.getElementById('modalPreviewBody');
+  let docsHtml = '';
+  if (d.docsEmFalta.length > 0) {
+    docsHtml = `<ul class="preview-docs-list">${d.docsEmFalta.map(doc => `<li>${doc}</li>`).join('')}</ul>`;
+  } else {
+    docsHtml = '<div class="preview-value">Nenhum documento em falta</div>';
+  }
+
+  body.innerHTML = `
+    <div class="preview-item"><div class="preview-label">Nome</div><div class="preview-value">${d.nome || '—'}</div></div>
+    <div class="preview-item"><div class="preview-label">Morada</div><div class="preview-value">${d.morada || '—'}</div></div>
+    <div class="preview-item"><div class="preview-label">NIF / C.C.</div><div class="preview-value">${d.nif || '—'}</div></div>
+    <div class="preview-item"><div class="preview-label">Contacto</div><div class="preview-value">${d.contacto || '—'}</div></div>
+    <div class="preview-item"><div class="preview-label">Nº Processo</div><div class="preview-value">${d.nProcesso || '—'}</div></div>
+    <div class="preview-item"><div class="preview-label">Nº Certificado</div><div class="preview-value">${d.nCertificado || '—'}</div></div>
+    <div class="preview-item"><div class="preview-label">Na qualidade de</div><div class="preview-value">${d.qualidade || '—'}</div></div>
+    <div class="preview-item"><div class="preview-label">Declarações</div><div class="preview-value" style="white-space:pre-wrap;">${d.declaracoes || '—'}</div></div>
+    <div class="preview-item"><div class="preview-label">Observações</div><div class="preview-value" style="white-space:pre-wrap;">${d.observacoes || '—'}</div></div>
+    <div class="preview-item"><div class="preview-label">Documentos em falta</div>${docsHtml}</div>
+    <div class="preview-item"><div class="preview-label">Perito</div><div class="preview-value">${d.nomePerito || '—'}</div></div>
+    <div class="preview-item"><div class="preview-label">Data</div><div class="preview-value">${d.data}</div></div>
+  `;
+  document.getElementById('previewModal').classList.add('active');
+}
+
+function closePreviewModal() {
+  document.getElementById('previewModal').classList.remove('active');
+}
+
+// Toast
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// PDF Generation
+function buildPDFContent(doc, d) {
+  var pageW = 210;
+  var margin = 20;
+  var contentW = pageW - margin * 2;
+  var y = 20;
+
+  function checkPage(needed) {
+    if (y + needed > 275) {
+      doc.addPage();
+      y = 20;
+    }
+  }
+
+  var lM = 26;
+  var rM = 184;
+  var valX = 68;
+  var midX = 118;
+  var midValX = 151;
+
+  doc.setDrawColor(0, 0, 0);
+  doc.setTextColor(0, 0, 0);
+
+  var co = COMPANIES[d.empresa] || COMPANIES.modera;
+  doc.addImage(co.logo, 'JPEG', lM, 11, co.logoW, co.logoH);
+
+      y = 38;
+      doc.setFontSize(15);
+      doc.setFont(undefined, 'bold');
+      var pdfTitle = d.tipoAuto === 'lesado' ? 'AUTO DE VISTORIA - LESADO' : 'AUTO DE VISTORIA';
+      doc.text(pdfTitle, (lM + rM) / 2 + 15, y, { align: 'center' });
+
+      // ====== FORM FIELDS (matching original table layout) ======
+      y = 50;
+      doc.setFontSize(9);
+      doc.setLineWidth(0.2);
+
+      // Helper: draw a field row with label on left, value with underline
+      function fieldRow(label, value, yy, lineStart, lineEnd) {
+        lineStart = lineStart || valX;
+        lineEnd = lineEnd || rM;
+        doc.setFont(undefined, 'bold');
+        doc.text(label, lM, yy);
+        doc.setFont(undefined, 'normal');
+        if (value) doc.text(value, lineStart + 1, yy);
+        doc.line(lineStart, yy + 1.5, lineEnd, yy + 1.5);
+      }
+
+      // NOME:
+      doc.setFont(undefined, 'bold');
+      doc.text('NOME:', lM, y);
+      doc.setFont(undefined, 'bold'); // name in bold like original
+      doc.text(d.nome || '', valX + 1, y);
+      doc.line(valX, y + 1.5, rM, y + 1.5);
+      y += 9;
+
+      // MORADA:
+      doc.setFont(undefined, 'bold');
+      doc.text('MORADA:', lM, y);
+      doc.setFont(undefined, 'normal');
+      doc.text(d.morada || '', valX + 1, y);
+      doc.line(valX, y + 1.5, rM, y + 1.5);
+      y += 9;
+
+      // PROFISSÃO: _______ NIF/ C.C. N.º _______
+      doc.setFont(undefined, 'bold');
+      doc.text('PROFISSÃO:', lM, y);
+      doc.line(valX, y + 1.5, midX - 2, y + 1.5);
+      doc.setFont(undefined, 'bold');
+      doc.text('NIF/ C.C. N.º', midX, y);
+      doc.setFont(undefined, 'bold');
+      doc.text(d.nif || '', midValX + 1, y);
+      doc.line(midValX, y + 1.5, rM, y + 1.5);
+      y += 9;
+
+      // NA QUALIDADE DE: _______
+      doc.setFont(undefined, 'bold');
+      doc.text('NA QUALIDADE DE:', lM, y);
+      doc.setFont(undefined, 'normal');
+      doc.text(d.qualidade || '', valX + 1, y);
+      doc.line(valX, y + 1.5, rM, y + 1.5);
+      y += 9;
+
+      // CONTACTO: _______ E-MAIL: _______
+      doc.setFont(undefined, 'bold');
+      doc.text('CONTACTO:', lM, y);
+      doc.setFont(undefined, 'normal');
+      doc.text(d.contacto || '', valX + 1, y);
+      doc.line(valX, y + 1.5, midX - 2, y + 1.5);
+      doc.setFont(undefined, 'bold');
+      doc.text('E-MAIL:', midX, y);
+      doc.setFont(undefined, 'normal');
+      doc.text(d.emailContacto || '', midX + 22, y);
+      doc.line(midX + 20, y + 1.5, rM, y + 1.5);
+      y += 9;
+
+      // PROCESSO Nº _______ CERTIFICADO Nº: _______
+      doc.setFont(undefined, 'bold');
+      doc.text('PROCESSO Nº', lM, y);
+      doc.setFont(undefined, 'bold');
+      doc.setFontSize(10);
+      doc.text(d.nProcesso || '', valX + 1, y);
+      doc.setFontSize(9);
+      doc.line(valX, y + 1.5, midX - 2, y + 1.5);
+      doc.setFont(undefined, 'bold');
+      doc.text('CERTIFICADO Nº:', midX, y);
+      doc.setFont(undefined, 'bold');
+      doc.setFontSize(10);
+      doc.text(d.nCertificado || '', midValX + 1, y);
+      doc.setFontSize(9);
+      doc.line(midValX, y + 1.5, rM, y + 1.5);
+      y += 14;
+
+      // ====== DECLARAÇÕES QUE NOS FORAM PRESTADAS ======
+      doc.setFont(undefined, 'bold');
+      doc.setFontSize(10);
+      doc.text('DECLARAÇÕES QUE NOS FORAM PRESTADAS', (lM + rM) / 2, y, { align: 'center' });
+      y += 7;
+
+      // Write declarations text directly — NO ruled lines (those are only for handwriting)
+      doc.setFont(undefined, 'normal');
+      doc.setFontSize(9);
+      if (d.declaracoes) {
+        const declLines = doc.splitTextToSize(d.declaracoes, rM - lM);
+        for (let i = 0; i < declLines.length; i++) {
+          checkPage(6);
+          doc.text(declLines[i], lM, y);
+          y += 4.8;
+        }
+      }
+      y += 4;
+
+      // Observações adicionais
+      if (d.observacoes) {
+        checkPage(20);
+        doc.setFont(undefined, 'bold');
+        doc.setFontSize(9);
+        doc.text('Observações adicionais:', lM, y);
+        y += 5;
+        doc.setFont(undefined, 'normal');
+        const obsLines = doc.splitTextToSize(d.observacoes, rM - lM);
+        for (let i = 0; i < obsLines.length; i++) {
+          checkPage(6);
+          doc.text(obsLines[i], lM, y);
+          y += 4.8;
+        }
+        y += 4;
+      }
+
+      // ====== DOCUMENTOS EM FALTA ======
+      if (d.docsEmFalta.length > 0) {
+        // Separator line
+        checkPage(20 + d.docsEmFalta.length * 5.5);
+        doc.setLineWidth(0.3);
+        doc.line(lM, y, rM, y);
+        y += 7;
+
+        doc.setFont(undefined, 'bold');
+        doc.setFontSize(10);
+        doc.text('DOCUMENTOS EM FALTA', (lM + rM) / 2, y, { align: 'center' });
+        y += 6;
+
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(8);
+        doc.text('Solicitamos o envio dos seguintes documentos o quanto antes para conclusão da peritagem:', lM, y);
+        y += 6;
+
+        doc.setFontSize(9);
+        d.docsEmFalta.forEach((docName) => {
+          checkPage(6);
+          const wrappedDoc = doc.splitTextToSize('•  ' + docName, rM - lM - 6);
+          doc.text(wrappedDoc, lM + 3, y);
+          y += wrappedDoc.length * 4.8 + 1.5;
+        });
+        y += 3;
+
+        // Closing line
+        doc.setLineWidth(0.3);
+        doc.line(lM, y, rM, y);
+        y += 5;
+      }
+
+      // ====== DATA + ASSINATURA ======
+      checkPage(70);
+      y += 5;
+      doc.setFont(undefined, 'bold');
+      doc.setFontSize(9);
+      doc.text('Data:', lM, y);
+      doc.setFont(undefined, 'normal');
+      var parts = d.data.split('/');
+      doc.text((parts[0] || '  ').trim() + '  /  ' + (parts[1] || '  ').trim() + '  /  ' + (parts[2] || '    ').trim(), lM + 14, y);
+
+      doc.setFont(undefined, 'bold');
+      doc.text('Assinaturas:', 75, y);
+      y += 4;
+
+      // === Side-by-side signatures ===
+      // Layout: signature on TOP, name BELOW
+      // Left column: Perito | Right column: Qualidade/Tomador
+      var sigColLeft = lM;        // perito column X
+      var sigColRight = 110;       // tomador column X
+      var sigW = 55;
+      var sigH = 22;
+
+      // Perito signature on top (left)
+      if (signatures.sigPerito.hasData) {
+        var sigPData = document.getElementById('sigPerito').toDataURL('image/png');
+        doc.addImage(sigPData, 'PNG', sigColLeft, y, sigW, sigH);
+      }
+
+      // Tomador signature on top (right)
+      if (signatures.sigTomador.hasData) {
+        var sigTData = document.getElementById('sigTomador').toDataURL('image/png');
+        doc.addImage(sigTData, 'PNG', sigColRight, y, sigW, sigH);
+      }
+
+      y += sigH + 2;
+
+      // "(Conforme B.I. / Cartão Cidadão)" on right side
+      doc.setFont(undefined, 'normal');
+      doc.setFontSize(7.5);
+      doc.text('(Conforme B.I. / Cartão Cidadão)', sigColRight, y);
+      y += 5;
+
+      // Names BELOW signatures
+      doc.setFontSize(8);
+      doc.text('Perito: ' + (d.nomePerito || ''), sigColLeft, y);
+
+      var tomadorLabel = d.qualidade || 'Tomador';
+      doc.text(tomadorLabel + ': ' + (d.nomeTomadorSig || ''), sigColRight, y);
+
+      y += 6;
+
+      // ====== RGPD SECTION ======
+      checkPage(50);
+      doc.setFont(undefined, 'bold');
+      doc.setFontSize(7.5);
+      doc.text('Regulamento de proteção de dados', lM, y);
+      y += 5;
+      doc.setFont(undefined, 'normal');
+      doc.setFontSize(7);
+
+      var rgpdText = 'Autorizo que os dados pessoais, incluindo dados sensíveis que constam de todo o processo de peritagem, sejam utilizados com vista à realização da Peritagem por parte da ' + co.rgpdEntity + ', na qualidade de subcontratada da Companhia de seguros, responsável pelo tratamento de dados nos termos do Regulamento Geral de Proteção de dados 2016/679 e da Legislação aplicável.';
+      var rgpdLines = doc.splitTextToSize(rgpdText, rM - lM + 2);
+      doc.text(rgpdLines, lM, y);
+      y += rgpdLines.length * 3.3 + 2;
+
+      doc.text('Aconselhamos que leia atentamente a Política de Privacidade em ' + co.privacy + '.', lM, y);
+      y += 4;
+
+      var rgpd2 = 'Se não for dado consentimento, os seus dados pessoais, incluindo dados sensíveis, não poderão ser objeto de tratamento o que impedirá a instrução e/ou regularização do processo acima em questão.';
+      var rgpd2Lines = doc.splitTextToSize(rgpd2, rM - lM + 2);
+      doc.text(rgpd2Lines, lM, y);
+      y += rgpd2Lines.length * 3.3 + 5;
+
+      // Autorizo / Não Autorizo checkboxes — mark based on RGPD consent
+      doc.setFontSize(8);
+      doc.rect(lM + 8, y - 3.5, 3.5, 3.5);
+      if (d.rgpdAutorizado) {
+        // Draw X inside the Autorizo checkbox
+        doc.setLineWidth(0.4);
+        doc.line(lM + 8.3, y - 3.2, lM + 11.2, y - 0.3);
+        doc.line(lM + 11.2, y - 3.2, lM + 8.3, y - 0.3);
+        doc.setLineWidth(0.2);
+      }
+      doc.text('Autorizo', lM + 14, y);
+      doc.rect(lM + 68, y - 3.5, 3.5, 3.5);
+      if (!d.rgpdAutorizado) {
+        doc.setLineWidth(0.4);
+        doc.line(lM + 68.3, y - 3.2, lM + 71.2, y - 0.3);
+        doc.line(lM + 71.2, y - 3.2, lM + 68.3, y - 0.3);
+        doc.setLineWidth(0.2);
+      }
+      doc.text('Não Autorizo', lM + 74, y);
+
+      // ====== FOOTER on every page (from company config) ======
+      var totalPages = doc.internal.getNumberOfPages();
+      for (var p = 1; p <= totalPages; p++) {
+        doc.setPage(p);
+        doc.setFontSize(7);
+        doc.setTextColor(0, 0, 0);
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.3);
+        doc.line(lM, 281, rM, 281);
+        doc.text(co.footer1, pageW / 2, 285, { align: 'center' });
+        doc.text(co.footer2, pageW / 2, 288.5, { align: 'center' });
+        doc.text('023/01', lM, 293);
+        doc.text('Página ' + p, rM, 293, { align: 'right' });
+      }
+
+
+}
+
+
+function generatePDF(shareMode) {
+  var d = getFormData();
+  if (!d.nome || !d.nProcesso) {
+    showToast('Preencha o nome e nº de processo');
+    return;
+  }
+  if (!d.declaracoes) {
+    showToast('Preencha as declarações da vistoria');
+    return;
+  }
+
+  document.getElementById('generating').classList.add('active');
+  document.querySelector('#generating p').textContent = shareMode ? 'A gerar PDF para envio...' : 'A gerar o PDF...';
+
+  waitForJsPDF(function(loaded) {
+    if (!loaded) {
+      document.getElementById('generating').classList.remove('active');
+      showToast('Erro: biblioteca PDF não carregou. Verifique a internet.');
+      return;
+    }
+    setTimeout(function() {
+    try {
+      var jsPDF = window.jspdf.jsPDF;
+      var doc = new jsPDF('p', 'mm', 'a4');
+
+      // Build the PDF content
+      buildPDFContent(doc, d);
+
+      // Save
+      var tipoFile = d.tipoAuto === 'lesado' ? 'LESADO_' + (d.nome || '').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30) + '_' : '';
+      var filename = 'Auto_Vistoria_' + tipoFile + (d.nProcesso || 'rascunho') + '_' + d.data.replace(/\//g, '-') + '.pdf';
+      // Save/Share PDF
+      var pdfBlob = doc.output('blob');
+      var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+      if (shareMode) {
+        var co = COMPANIES[d.empresa] || COMPANIES.modera;
+        
+        var recipientsSegurado = [];
+        var recipientsPerito = [];
+        
+        if (d.emailContacto) recipientsSegurado.push(d.emailContacto);
+        if (d.emailPerito) recipientsPerito.push(d.emailPerito);
+        if (d.emailGeral) recipientsPerito.push(d.emailGeral);
+        
+        var allRecipients = recipientsSegurado.concat(recipientsPerito);
+        if (allRecipients.length === 0) {
+          document.getElementById('generating').classList.remove('active');
+          showToast('Preencha pelo menos um email');
+          return;
+        }
+        
+        var tipoPrefix = d.tipoAuto === 'lesado' ? 'LESADO - ' + d.nome + ' - ' : '';
+        var subject = 'Auto de Vistoria - ' + tipoPrefix + 'Processo ' + d.nProcesso + (d.nCertificado ? ' / ' + d.nCertificado : '');
+        var emailBody = 'Exmos. Senhores,\n\n' +
+          'Segue em anexo o auto de vistoria do processo ' + d.nProcesso +
+          (d.nCertificado ? ' e certificado ' + d.nCertificado : '') +
+          ', realizada no dia ' + d.data + '.\n\n' +
+          'Com os melhores cumprimentos,\n' +
+          (d.nomePerito || '') + '\n' +
+          co.name;
+        
+        // PDF base (without observations) for segurado/lesados
+        var pdfSegurado = doc.output('datauristring').split(',')[1];
+        
+        // Add observations page for perito version
+        if (d.observacoes) {
+          doc.addPage();
+          var yObs = 20;
+          doc.setFont(undefined, 'bold');
+          doc.setFontSize(11);
+          doc.text('OBSERVAÇÕES INTERNAS', pageW / 2, yObs, { align: 'center' });
+          yObs += 8;
+          doc.setFont(undefined, 'normal');
+          doc.setFontSize(9);
+          doc.setTextColor(200, 0, 0);
+          doc.text('(Documento confidencial - apenas para uso interno)', pageW / 2, yObs, { align: 'center' });
+          doc.setTextColor(0, 0, 0);
+          yObs += 10;
+          doc.setFontSize(10);
+          var obsLines = doc.splitTextToSize(d.observacoes, rM - lM);
+          doc.text(obsLines, lM, yObs);
+          var totalP = doc.internal.getNumberOfPages();
+          doc.setPage(totalP);
+          doc.setFontSize(7);
+          doc.setDrawColor(0, 0, 0);
+          doc.setLineWidth(0.3);
+          doc.line(lM, 281, rM, 281);
+          doc.text(co.footer1, pageW / 2, 285, { align: 'center' });
+          doc.text(co.footer2, pageW / 2, 288.5, { align: 'center' });
+          doc.text('023/01', lM, 293);
+          doc.text('Página ' + totalP, rM, 293, { align: 'right' });
+        }
+        var pdfPerito = doc.output('datauristring').split(',')[1];
+        
+        document.querySelector('#generating p').textContent = 'A enviar emails...';
+        
+        if (!EMAIL_API_URL) {
+          document.getElementById('generating').classList.remove('active');
+          showToast('API de email não configurada');
+          return;
+        }
+        
+        var payload = {
+          pdfSegurado: pdfSegurado,
+          pdfPerito: pdfPerito,
+          recipientsSegurado: recipientsSegurado,
+          recipientsPerito: recipientsPerito,
+          assunto: subject,
+          corpo: emailBody,
+          filename: filename,
+          remetente: co.name
+        };
+        
+        fetch(EMAIL_API_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          redirect: 'follow'
+        })
+        .then(function(resp) {
+          try { return resp.json(); } catch(e) { return resp.text(); }
+        })
+        .then(function(result) {
+          document.getElementById('generating').classList.remove('active');
+          if (typeof result === 'string') {
+            try { result = JSON.parse(result); } catch(e) {
+              result = { success: true, enviados: allRecipients.length, erros: [] };
+            }
+          }
+          if (result.success || result.enviados > 0) {
+            document.getElementById('sendModalTitle').textContent = 'Enviado!';
+            document.getElementById('sendModalBody').innerHTML = 
+              '<div style="text-align:center;color:#2a7d4f;font-size:40px;margin:10px 0;">&#10003;</div>' +
+              '<p style="text-align:center;font-weight:600;">Email enviado com sucesso!</p>' +
+              '<p style="color:#6b6b80;font-size:13px;margin-top:8px;">' +
+              'Enviado para:<br>' + allRecipients.map(function(e){return '&bull; '+e;}).join('<br>') +
+              '</p>';
+          } else {
+            document.getElementById('sendModalTitle').textContent = 'Resultado';
+            var msg = '';
+            if (result.enviados) msg += '<p>Enviados: ' + result.enviados + '</p>';
+            if (result.erros && result.erros.length) msg += '<p style="color:#c0392b;">Erros:<br>' + result.erros.join('<br>') + '</p>';
+            if (result.error) msg += '<p style="color:#c0392b;">' + result.error + '</p>';
+            document.getElementById('sendModalBody').innerHTML = msg;
+          }
+          document.getElementById('sendModal').classList.add('active');
+        })
+        .catch(function(err) {
+          console.log('Fetch failed, trying iframe:', err.message);
+          sendViaIframe(EMAIL_API_URL, payload, allRecipients);
+        });
+        
+      } else {
+        // DOWNLOAD MODE: just save the PDF
+        var blobUrl = URL.createObjectURL(pdfBlob);
+        if (isIOS) {
+          window.open(blobUrl, '_blank');
+        } else {
+          var link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+        setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 10000);
+        document.getElementById('generating').classList.remove('active');
+        showToast('PDF gerado com sucesso!');
+      }
+
+    } catch (err) {
+      document.getElementById('generating').classList.remove('active');
+      showToast('Erro ao gerar PDF: ' + err.message);
+      console.error(err);
+    }
+  }, 600);
+  }); // end waitForJsPDF
+}
+
+// ====== EMAIL VIA GOOGLE APPS SCRIPT ======
+var EMAIL_API_URL = '';
+
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var apiUrl = params.get('api');
+  if (apiUrl) EMAIL_API_URL = apiUrl;
+})();
+
+function generateAndShare() {
+  if (!EMAIL_API_URL) {
+    showToast('API de email não configurada');
+    return;
+  }
+  generatePDF(true);
+}
+
+// Fallback: send via hidden form POST (bypasses CORS)
+function sendViaIframe(url, data, recipients) {
+  var form = document.createElement('form');
+  form.method = 'POST';
+  form.action = url;
+  form.target = 'sendFrame';
+  form.style.display = 'none';
+  
+  var input = document.createElement('input');
+  input.type = 'hidden';
+  input.name = 'payload';
+  input.value = JSON.stringify(data);
+  form.appendChild(input);
+  
+  // Create hidden iframe
+  var iframe = document.getElementById('sendFrame');
+  if (!iframe) {
+    iframe = document.createElement('iframe');
+    iframe.name = 'sendFrame';
+    iframe.id = 'sendFrame';
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+  }
+  
+  document.body.appendChild(form);
+  form.submit();
+  document.body.removeChild(form);
+  
+  // Since we can't read the iframe response (cross-origin), assume success after delay
+  document.getElementById('generating').classList.remove('active');
+  setTimeout(function() {
+    document.getElementById('sendModalTitle').textContent = 'Email enviado!';
+    document.getElementById('sendModalBody').innerHTML = 
+      '<div style="text-align:center;color:#2a7d4f;font-size:40px;margin:10px 0;">&#10003;</div>' +
+      '<p style="text-align:center;font-weight:600;">Email enviado com sucesso!</p>' +
+      '<p style="color:#6b6b80;font-size:13px;margin-top:8px;">' +
+      'PDF enviado para:<br>' + recipients.map(function(e){return '&bull; '+e;}).join('<br>') +
+      '</p>';
+    document.getElementById('sendModal').classList.add('active');
+  }, 2000);
+}
+
+function showSendModal() {
+  document.getElementById('sendModal').classList.add('active');
+}
+
+function closeSendModal() {
+  document.getElementById('sendModal').classList.remove('active');
+}
+
+function savePDFLocal(pdfBlob, filename, isIOS) {
+  var blobUrl = URL.createObjectURL(pdfBlob);
+  if (isIOS) {
+    window.open(blobUrl, '_blank');
+  } else {
+    var link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+  setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 15000);
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', function() {
+  initChecklist();
+  initSignature('sigPerito');
+  initSignature('sigTomador');
+  updateNav();
+  prefillFromURL();
+  updateEmpresa();
+  setupLesadoAutoFill();
+});
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a1a2e">
+<title>Auto de Vistoria</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
+<script>
+// Ensure jsPDF is loaded before use
+function waitForJsPDF(callback, maxWait) {
+  maxWait = maxWait || 5000;
+  var start = Date.now();
+  function check() {
+    if (window.jspdf && window.jspdf.jsPDF) {
+      callback(true);
+    } else if (Date.now() - start > maxWait) {
+      callback(false);
+    } else {
+      setTimeout(check, 100);
+    }
+  }
+  check();
+}
+</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #f4f1ec;
+    --bg-card: #ffffff;
+    --bg-input: #f8f6f3;
+    --text: #1a1a2e;
+    --text-muted: #6b6b80;
+    --text-light: #9999aa;
+    --primary: #2d5a8e;
+    --primary-light: #e8f0fa;
+    --primary-dark: #1e3d5f;
+    --accent: #c4883a;
+    --accent-light: #fdf3e7;
+    --border: #e2dfd8;
+    --border-focus: #2d5a8e;
+    --success: #2a7d4f;
+    --success-light: #e8f5ee;
+    --danger: #c0392b;
+    --danger-light: #fceae8;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 30px rgba(0,0,0,0.12);
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Header */
+  .app-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    padding: 20px 24px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .app-header .brand {
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+
+  .app-header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .app-header .subtitle {
+    font-size: 13px;
+    opacity: 0.65;
+    margin-top: 2px;
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    display: flex;
+    gap: 4px;
+    padding: 0 24px;
+    margin-top: -12px;
+    position: relative;
+    z-index: 101;
+  }
+
+  .progress-step {
+    flex: 1;
+    height: 4px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 2px;
+    transition: background 0.4s ease;
+    cursor: pointer;
+  }
+
+  .progress-step.active {
+    background: var(--accent);
+  }
+
+  .progress-step.completed {
+    background: rgba(255,255,255,0.8);
+  }
+
+  /* Main */
+  .app-main {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 24px 16px 120px;
+  }
+
+  /* Sections */
+  .section {
+    display: none;
+    animation: fadeIn 0.35s ease;
+  }
+
+  .section.active {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+
+  .section-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+  }
+
+  .card-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title .icon {
+    width: 20px;
+    height: 20px;
+    background: var(--primary-light);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+  }
+
+  /* Form elements */
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group:last-child {
+    margin-bottom: 0;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .form-label .required {
+    color: var(--danger);
+    margin-left: 2px;
+  }
+
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    background: var(--bg-input);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    transition: all 0.2s ease;
+    outline: none;
+  }
+
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--border-focus);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(45,90,142,0.1);
+  }
+
+  .form-textarea {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.6;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* Checkbox group for documents */
+  .doc-checklist {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .doc-check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--bg-input);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+  }
+
+  .doc-check-item:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+  }
+
+  .doc-check-item.checked {
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
+
+  .doc-check-item input[type="checkbox"] {
+    display: none;
+  }
+
+  .doc-check-box {
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    border-radius: 6px;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    margin-top: 1px;
+  }
+
+  .doc-check-item.checked .doc-check-box {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .doc-check-box svg {
+    width: 14px;
+    height: 14px;
+    stroke: white;
+    stroke-width: 3;
+    fill: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  .doc-check-item.checked .doc-check-box svg {
+    opacity: 1;
+  }
+
+  .doc-check-label {
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--text);
+  }
+
+  .doc-outros-input {
+    margin-top: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: white;
+    display: none;
+  }
+
+  .doc-check-item.checked .doc-outros-input {
+    display: block;
+  }
+
+  /* Signature pad */
+  .signature-area {
+    margin-top: 8px;
+  }
+
+  .signature-canvas-wrap {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    background: white;
+    position: relative;
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  .signature-canvas-wrap.signing {
+    border-color: var(--primary);
+    border-style: solid;
+  }
+
+  .signature-canvas {
+    width: 100%;
+    height: 180px;
+    display: block;
+    cursor: crosshair;
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+  }
+
+  .signature-placeholder {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--text-light);
+    font-size: 13px;
+    pointer-events: none;
+    text-align: center;
+    transition: opacity 0.2s;
+  }
+
+  .signature-canvas-wrap.has-signature .signature-placeholder {
+    opacity: 0;
+  }
+
+  .signature-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .btn-sig-clear {
+    padding: 8px 16px;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: white;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-sig-clear:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  /* Email tags */
+  .email-tag-area {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .email-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--primary-light);
+    border-radius: 20px;
+    font-size: 13px;
+    color: var(--primary);
+    font-weight: 500;
+  }
+
+  .email-tag .remove-tag {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(45,90,142,0.15);
+    color: var(--primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  /* Bottom nav */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));
+    display: flex;
+    gap: 12px;
+    z-index: 100;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+  }
+
+  .btn {
+    flex: 1;
+    padding: 14px 20px;
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    border-radius: var(--radius);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-secondary {
+    background: var(--bg);
+    color: var(--text);
+    border: 1.5px solid var(--border);
+  }
+
+  .btn-secondary:hover {
+    background: var(--border);
+  }
+
+  .btn-primary {
+    background: var(--primary);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: var(--primary-dark);
+  }
+
+  .btn-success {
+    background: var(--success);
+    color: white;
+  }
+
+  .btn-success:hover {
+    background: #22694b;
+  }
+
+  .btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--text);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.35s ease;
+    z-index: 200;
+    white-space: nowrap;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Modal overlay for preview */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 300;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.active {
+    display: flex;
+  }
+
+  .modal-content {
+    background: white;
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 500px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 24px;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: var(--bg);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: var(--text-muted);
+  }
+
+  .preview-item {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .preview-item:last-child {
+    border-bottom: none;
+  }
+
+  .preview-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .preview-value {
+    font-size: 15px;
+    color: var(--text);
+    margin-top: 2px;
+  }
+
+  .preview-docs-list {
+    margin-top: 4px;
+    padding-left: 16px;
+  }
+
+  .preview-docs-list li {
+    font-size: 14px;
+    color: var(--danger);
+    margin-bottom: 4px;
+  }
+
+  /* Status indicator */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .status-badge.draft {
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+
+  .status-badge .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* Responsive */
+  @media (max-width: 400px) {
+    .form-row { grid-template-columns: 1fr; }
+    .app-header h1 { font-size: 19px; }
+  }
+
+  /* PDF generating animation */
+  .generating {
+    position: fixed;
+    inset: 0;
+    background: rgba(26,26,46,0.85);
+    z-index: 500;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+    color: white;
+  }
+
+  .generating.active {
+    display: flex;
+  }
+
+  .generating .spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid rgba(255,255,255,0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .generating p {
+    font-size: 15px;
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="app-header" id="appHeader">
+  <div class="brand" id="headerBrand">Auto de Vistoria</div>
+  <h1>Auto de Vistoria</h1>
+  <div class="subtitle">Relatório de Peritagem</div>
+</header>
+
+<!-- Progress -->
+<div class="progress-bar">
+  <div class="progress-step active" onclick="goToSection(0)"></div>
+  <div class="progress-step" onclick="goToSection(1)"></div>
+  <div class="progress-step" onclick="goToSection(2)"></div>
+  <div class="progress-step" onclick="goToSection(3)"></div>
+  <div class="progress-step" onclick="goToSection(4)"></div>
+  <div class="progress-step" onclick="goToSection(5)"></div>
+</div>
+
+<main class="app-main">
+
+  <!-- SECTION 0: Dados do Processo -->
+  <div class="section active" id="sec-0">
+    <h2 class="section-title">Dados do Processo</h2>
     <p class="section-desc">Informações gerais do processo e do tomador.</p>
 
     <div class="card">

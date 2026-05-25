@@ -1641,22 +1641,9 @@ function buildPDFContent(doc, d) {
       }
       y += 4;
 
-      // Observações adicionais
-      if (d.observacoes) {
-        checkPage(20);
-        doc.setFont(undefined, 'bold');
-        doc.setFontSize(9);
-        doc.text('Observações adicionais:', lM, y);
-        y += 5;
-        doc.setFont(undefined, 'normal');
-        const obsLines = doc.splitTextToSize(d.observacoes, rM - lM);
-        for (let i = 0; i < obsLines.length; i++) {
-          checkPage(6);
-          doc.text(obsLines[i], lM, y);
-          y += 4.8;
-        }
-        y += 4;
-      }
+      // Observações: NÃO incluir no corpo do PDF
+      // As observações internas são adicionadas numa página separada
+      // apenas na versão do perito (via shareMode em generatePDF)
 
       // ====== DOCUMENTOS EM FALTA ======
       if (d.docsEmFalta.length > 0) {

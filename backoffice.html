@@ -215,6 +215,14 @@
     </div>
   </div>
 
+  <!-- Hidden platform fields (populated by bookmarklet URL params) -->
+  <input type="hidden" id="seguradora">
+  <input type="hidden" id="apolice">
+  <input type="hidden" id="ramo">
+  <input type="hidden" id="tipoSinistro">
+  <input type="hidden" id="dataSinistro">
+  <input type="hidden" id="dataPedido">
+
   <!-- LINK + ENVIO -->
   <div class="card">
     <div class="card-title">Enviar ao Perito</div>
@@ -248,7 +256,7 @@
 // ============================================================
 // CONFIG - URL da app de vistoria (GitHub Pages)
 // ============================================================
-var VISTORIA_URL = "https://modera-eng.github.io/vistoria/index.html";
+var VISTORIA_URL = "https://TEUUSER.github.io/vistoria/index.html";
 
 // ============================================================
 // STATE
@@ -351,6 +359,12 @@ function getDados() {
     email: document.getElementById('emailContacto').value.trim(),
     qualidade: document.getElementById('qualidade').value,
     dataPeritagem: document.getElementById('dataPeritagem').value.trim(),
+    seguradora: document.getElementById('seguradora') ? document.getElementById('seguradora').value.trim() : '',
+    apolice: document.getElementById('apolice') ? document.getElementById('apolice').value.trim() : '',
+    ramo: document.getElementById('ramo') ? document.getElementById('ramo').value.trim() : '',
+    tipoSinistro: document.getElementById('tipoSinistro') ? document.getElementById('tipoSinistro').value.trim() : '',
+    dataSinistro: document.getElementById('dataSinistro') ? document.getElementById('dataSinistro').value.trim() : '',
+    dataPedido: document.getElementById('dataPedido') ? document.getElementById('dataPedido').value.trim() : '',
   };
 }
 
@@ -381,6 +395,13 @@ function gerarLink() {
   if (d.email) params.push('email=' + encodeURIComponent(d.email));
   if (d.qualidade) params.push('qualidade=' + encodeURIComponent(d.qualidade));
   if (d.dataPeritagem) params.push('dataPeritagem=' + encodeURIComponent(d.dataPeritagem));
+  // Platform fields for IP
+  if (d.seguradora) params.push('seguradora=' + encodeURIComponent(d.seguradora));
+  if (d.apolice) params.push('apolice=' + encodeURIComponent(d.apolice));
+  if (d.ramo) params.push('ramo=' + encodeURIComponent(d.ramo));
+  if (d.tipoSinistro) params.push('tipoSinistro=' + encodeURIComponent(d.tipoSinistro));
+  if (d.dataSinistro) params.push('dataSinistro=' + encodeURIComponent(d.dataSinistro));
+  if (d.dataPedido) params.push('dataPedido=' + encodeURIComponent(d.dataPedido));
   if (perito) {
     params.push('perito=' + encodeURIComponent(perito.nome));
     if (perito.email) params.push('emailPerito=' + encodeURIComponent(perito.email));
@@ -566,7 +587,9 @@ function prefillFromURL() {
     processo:'processo', certificado:'certificado', nome:'nome',
     morada:'morada', nif:'nif', contacto:'contacto',
     email:'emailContacto', qualidade:'qualidade', empresa:'empresa',
-    dataPeritagem:'dataPeritagem'
+    dataPeritagem:'dataPeritagem',
+    seguradora:'seguradora', apolice:'apolice', ramo:'ramo',
+    tipoSinistro:'tipoSinistro', dataSinistro:'dataSinistro', dataPedido:'dataPedido'
   };
   var filled = false;
   for (var key in map) {

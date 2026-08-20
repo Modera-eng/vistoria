@@ -8,6 +8,13 @@
 <meta name="theme-color" content="#1a1a2e">
 <title>Auto de Vistoria</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
+<script>
+  // Configure pdf.js worker
+  if (window.pdfjsLib) {
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+</script>
 <script>
 // Ensure jsPDF is loaded before use
 function waitForJsPDF(callback, maxWait) {
@@ -2028,7 +2035,7 @@ function generatePDF(shareMode) {
 }
 
 // ====== EMAIL VIA GOOGLE APPS SCRIPT ======
-var EMAIL_API_URL = 'https://script.google.com/macros/s/AKfycbw60Z2lNpZUFvW32bktv09nUUe-DDQXelSafpn1_VLFST6lCbJZtJsCxuF5bhifZmrjDA/exec';
+var EMAIL_API_URL = 'https://script.google.com/macros/s/AKfycbxLs3zMqmpzyMC-T96mdMBmfvbrrmDjFEnDpE06SyJxTxhj3vxcTtjmp9SEp4tZ6AcdIg/exec';
 
 (function() {
   var params = new URLSearchParams(window.location.search);
@@ -2235,14 +2242,34 @@ function gerarIP() {
       return;
     }
     
-    setTimeout(function() {
+    setTimeout(async function() {
       try {
         var jsPDF = window.jspdf.jsPDF;
         var doc = new jsPDF('p', 'mm', 'a4');
         buildPDFContent(doc, d);
-        var pdfBase64 = doc.output('datauristring').split(',')[1];
         
-        // Send to Apps Script
+        // Render each PDF page to PNG image using pdf.js
+        var pageImages = [];
+        var pdfArrayBuffer = doc.output('arraybuffer');
+        
+        if (window.pdfjsLib) {
+          document.querySelector('#generating p').textContent = 'A renderizar páginas...';
+          try {
+            var pdfDoc = await pdfjsLib.getDocument({ data: pdfArrayBuffer }).promise;
+            for (var p = 1; p <= pdfDoc.numPages; p++) {
+              var page = await pdfDoc.getPage(p);
+              var viewport = page.getViewport({ scale: 2 });
+              var canvas = document.createElement('canvas');
+              canvas.width = viewport.width;
+              canvas.height = viewport.height;
+              await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
+              pageImages.push(canvas.toDataURL('image/png').split(',')[1]);
+            }
+          } catch(pdfErr) {
+            console.log('pdf.js render error:', pdfErr);
+          }
+        }
+        
         var payload = {
           action: 'gerarIP',
           certificado: d.nCertificado,
@@ -2254,9 +2281,8 @@ function gerarIP() {
           declaracoes: d.declaracoes,
           causaSinistro: causa,
           estimativa: estimativa,
-          pdfBase64: pdfBase64,
           docsEmFalta: d.docsEmFalta || [],
-          // Platform data from bookmarklet
+          pageImages: pageImages,
           seguradora: platformData.seguradora,
           apolice: platformData.apolice,
           ramo: platformData.ramo,

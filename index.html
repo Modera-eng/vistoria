@@ -925,9 +925,9 @@ function waitForJsPDF(callback, maxWait) {
     Seguinte
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-7-7l7 7-7 7"/></svg>
   </button>
-  <button class="btn btn-success" id="btnGenerate" onclick="generatePDF()" style="display:none;">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
-    Gerar PDF
+  <button class="btn btn-success" id="btnFolder" onclick="abrirPastaDrive()" style="display:none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9 14 12 11 15 14"/></svg>
+    Importar Fotografias
   </button>
   <button class="btn btn-primary" id="btnSendEmail" onclick="generateAndShare()" style="display:none;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
@@ -1279,7 +1279,7 @@ function prevSection() {
 function updateNav() {
   document.getElementById('btnPrev').style.display = currentSection === 0 ? 'none' : 'flex';
   document.getElementById('btnNext').style.display = currentSection === totalSections - 1 ? 'none' : 'flex';
-  document.getElementById('btnGenerate').style.display = currentSection === totalSections - 1 ? 'flex' : 'none';
+  document.getElementById('btnFolder').style.display = currentSection === totalSections - 1 ? 'flex' : 'none';
   document.getElementById('btnSendEmail').style.display = currentSection === totalSections - 1 ? 'flex' : 'none';
 }
 
@@ -2038,6 +2038,50 @@ function showSendModal() {
 
 function closeSendModal() {
   document.getElementById('sendModal').classList.remove('active');
+}
+
+// ====== GOOGLE DRIVE - ABRIR PASTA DO PROCESSO ======
+function abrirPastaDrive() {
+  var certificado = document.getElementById('nCertificado').value.trim();
+  var empresa = document.getElementById('empresa').value;
+  
+  if (!certificado) {
+    showToast('Nº do certificado não preenchido');
+    return;
+  }
+  
+  if (!EMAIL_API_URL) {
+    showToast('API não configurada');
+    return;
+  }
+  
+  showToast('A procurar pasta...');
+  
+  // Call the Apps Script doGet with certificado parameter
+  var url = EMAIL_API_URL + '?certificado=' + encodeURIComponent(certificado) + '&empresa=' + encodeURIComponent(empresa);
+  
+  fetch(url, { redirect: 'follow' })
+    .then(function(resp) {
+      try { return resp.json(); } catch(e) { return resp.text(); }
+    })
+    .then(function(result) {
+      if (typeof result === 'string') {
+        try { result = JSON.parse(result); } catch(e) {
+          showToast('Erro na resposta da API');
+          return;
+        }
+      }
+      
+      if (result.found && result.folderUrl) {
+        window.open(result.folderUrl, '_blank');
+        showToast('Pasta aberta: ' + result.folderName);
+      } else {
+        showToast('Pasta não encontrada para certificado ' + certificado);
+      }
+    })
+    .catch(function(err) {
+      showToast('Erro ao procurar pasta: ' + err.message);
+    });
 }
 
 function savePDFLocal(pdfBlob, filename, isIOS) {

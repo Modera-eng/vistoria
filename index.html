@@ -933,6 +933,10 @@ function waitForJsPDF(callback, maxWait) {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
     Enviar Email
   </button>
+  <button class="btn" id="btnIP" onclick="mostrarModalIP()" style="display:none;background:#8e44ad;color:white;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    Info. Preliminar
+  </button>
 </div>
 
 <!-- Toast -->
@@ -959,6 +963,29 @@ function waitForJsPDF(callback, maxWait) {
     <div id="sendModalBody" style="font-size:14px;line-height:1.6;"></div>
     <div style="margin-top:16px;text-align:center;">
       <button class="btn btn-secondary" onclick="closeSendModal()" style="display:inline-flex;">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- IP modal - Informação Preliminar -->
+<div class="modal-overlay" id="ipModal">
+  <div class="modal-content">
+    <div class="modal-title">
+      Informação Preliminar
+      <button class="modal-close" onclick="fecharModalIP()">×</button>
+    </div>
+    <p style="font-size:13px;color:#6b6b80;margin-bottom:12px;">Preencha os campos adicionais para gerar a Informação Preliminar:</p>
+    <div class="form-group">
+      <label class="form-label">Causa do Sinistro <span class="required">*</span></label>
+      <textarea class="form-textarea" id="ipCausaSinistro" rows="3" placeholder="Descreva a causa do sinistro..." style="min-height:60px;"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Estimativa de Indemnização <span class="required">*</span></label>
+      <input class="form-input" id="ipEstimativa" placeholder="Ex: 2500.00 €" inputmode="decimal">
+    </div>
+    <div style="margin-top:16px;display:flex;gap:10px;">
+      <button class="btn btn-secondary" onclick="fecharModalIP()" style="flex:1;justify-content:center;">Cancelar</button>
+      <button class="btn" onclick="gerarIP()" style="flex:1;justify-content:center;background:#8e44ad;color:white;">Gerar IP</button>
     </div>
   </div>
 </div>
@@ -1207,6 +1234,16 @@ function prefillFromURL() {
     }
   }
   
+  // Save platform data for IP generation
+  platformData.seguradora = params.get('seguradora') || '';
+  platformData.apolice = params.get('apolice') || '';
+  platformData.ramo = params.get('ramo') || '';
+  platformData.tipoSinistro = params.get('tipoSinistro') || '';
+  platformData.dataSinistro = params.get('dataSinistro') || '';
+  platformData.dataPedido = params.get('dataPedido') || '';
+  platformData.gestor = params.get('gestor') || 'Geral';
+  platformData.dataPeritagem = params.get('dataPeritagem') || '';
+  
   // Trigger empresa update
   updateEmpresa();
 }
@@ -1281,6 +1318,7 @@ function updateNav() {
   document.getElementById('btnNext').style.display = currentSection === totalSections - 1 ? 'none' : 'flex';
   document.getElementById('btnFolder').style.display = currentSection === totalSections - 1 ? 'flex' : 'none';
   document.getElementById('btnSendEmail').style.display = currentSection === totalSections - 1 ? 'flex' : 'none';
+  document.getElementById('btnIP').style.display = currentSection === totalSections - 1 ? 'flex' : 'none';
 }
 
 function updateProgress() {
@@ -2041,6 +2079,12 @@ function closeSendModal() {
 }
 
 // ====== GOOGLE DRIVE - ABRIR PASTA DO PROCESSO ======
+// Hidden platform data (populated from URL params by bookmarklet)
+var platformData = {
+  seguradora: '', apolice: '', ramo: '', tipoSinistro: '',
+  dataSinistro: '', dataPedido: '', gestor: '', dataPeritagem: ''
+};
+
 function abrirPastaDrive() {
   var certificado = document.getElementById('nCertificado').value.trim();
   var empresa = document.getElementById('empresa').value;
@@ -2057,31 +2101,66 @@ function abrirPastaDrive() {
   
   showToast('A procurar pasta...');
   
-  // Call the Apps Script doGet with certificado parameter
   var url = EMAIL_API_URL + '?certificado=' + encodeURIComponent(certificado) + '&empresa=' + encodeURIComponent(empresa);
   
+  // Use a dynamic script tag to bypass CORS (JSONP-style via callback page)
+  // First try fetch, then fallback to opening in new window
   fetch(url, { redirect: 'follow' })
-    .then(function(resp) {
-      try { return resp.json(); } catch(e) { return resp.text(); }
-    })
-    .then(function(result) {
-      if (typeof result === 'string') {
-        try { result = JSON.parse(result); } catch(e) {
-          showToast('Erro na resposta da API');
-          return;
+    .then(function(resp) { return resp.text(); })
+    .then(function(text) {
+      try {
+        var result = JSON.parse(text);
+        if (result.found && result.folderUrl) {
+          window.open(result.folderUrl, '_blank');
+          showToast('Pasta aberta: ' + result.folderName);
+        } else {
+          showToast('Pasta não encontrada para certificado ' + certificado);
         }
+      } catch(e) {
+        // CORS blocked the response - try via POST instead
+        fetchFolderViaPost(certificado, empresa);
       }
-      
+    })
+    .catch(function(err) {
+      // CORS error - try via POST
+      fetchFolderViaPost(certificado, empresa);
+    });
+}
+
+function fetchFolderViaPost(certificado, empresa) {
+  // Send as POST to bypass CORS (doPost can handle folder lookups too)
+  fetch(EMAIL_API_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'findFolder',
+      certificado: certificado,
+      empresa: empresa
+    }),
+    redirect: 'follow'
+  })
+  .then(function(resp) { return resp.text(); })
+  .then(function(text) {
+    try {
+      var result = JSON.parse(text);
       if (result.found && result.folderUrl) {
         window.open(result.folderUrl, '_blank');
         showToast('Pasta aberta: ' + result.folderName);
       } else {
         showToast('Pasta não encontrada para certificado ' + certificado);
       }
-    })
-    .catch(function(err) {
-      showToast('Erro ao procurar pasta: ' + err.message);
-    });
+    } catch(e) {
+      // Even POST failed (CORS) - use iframe fallback
+      // Send via iframe and open the URL directly as a guess
+      showToast('A abrir pasta...');
+      // Last resort: open Google Drive search directly
+      window.open('https://drive.google.com/drive/search?q=' + encodeURIComponent('(' + certificado + ')'), '_blank');
+    }
+  })
+  .catch(function(err) {
+    // Complete fallback: open Drive search
+    showToast('A procurar no Drive...');
+    window.open('https://drive.google.com/drive/search?q=' + encodeURIComponent('(' + certificado + ')'), '_blank');
+  });
 }
 
 function savePDFLocal(pdfBlob, filename, isIOS) {
@@ -2097,6 +2176,122 @@ function savePDFLocal(pdfBlob, filename, isIOS) {
     document.body.removeChild(link);
   }
   setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 15000);
+}
+
+// ====== INFORMAÇÃO PRELIMINAR ======
+function mostrarModalIP() {
+  var d = getFormData();
+  if (!d.nome || !d.nProcesso) {
+    showToast('Preencha os dados do processo primeiro');
+    return;
+  }
+  if (!d.declaracoes) {
+    showToast('Preencha as declarações primeiro');
+    return;
+  }
+  document.getElementById('ipModal').classList.add('active');
+}
+
+function fecharModalIP() {
+  document.getElementById('ipModal').classList.remove('active');
+}
+
+function gerarIP() {
+  var causa = document.getElementById('ipCausaSinistro').value.trim();
+  var estimativa = document.getElementById('ipEstimativa').value.trim();
+  
+  if (!causa) { showToast('Preencha a causa do sinistro'); return; }
+  if (!estimativa) { showToast('Preencha a estimativa'); return; }
+  
+  fecharModalIP();
+  
+  var d = getFormData();
+  var co = COMPANIES[d.empresa] || COMPANIES.modera;
+  
+  document.getElementById('generating').classList.add('active');
+  document.querySelector('#generating p').textContent = 'A gerar Informação Preliminar...';
+  
+  // Generate auto de vistoria PDF as base64 for embedding
+  waitForJsPDF(function(loaded) {
+    if (!loaded) {
+      document.getElementById('generating').classList.remove('active');
+      showToast('Erro: biblioteca PDF não carregou');
+      return;
+    }
+    
+    setTimeout(function() {
+      try {
+        var jsPDF = window.jspdf.jsPDF;
+        var doc = new jsPDF('p', 'mm', 'a4');
+        buildPDFContent(doc, d);
+        var pdfBase64 = doc.output('datauristring').split(',')[1];
+        
+        // Send to Apps Script
+        var payload = {
+          action: 'gerarIP',
+          certificado: d.nCertificado,
+          processo: d.nProcesso,
+          nome: d.nome,
+          morada: d.morada,
+          contacto: d.contacto,
+          perito: d.nomePerito,
+          declaracoes: d.declaracoes,
+          causaSinistro: causa,
+          estimativa: estimativa,
+          pdfBase64: pdfBase64,
+          // Platform data from bookmarklet
+          seguradora: platformData.seguradora,
+          apolice: platformData.apolice,
+          ramo: platformData.ramo,
+          tipoSinistro: platformData.tipoSinistro,
+          dataSinistro: platformData.dataSinistro,
+          dataPedido: platformData.dataPedido,
+          dataPeritagem: platformData.dataPeritagem || savedDataPeritagem,
+          gestor: platformData.gestor
+        };
+        
+        document.querySelector('#generating p').textContent = 'A guardar no Drive...';
+        
+        fetch(EMAIL_API_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          redirect: 'follow'
+        })
+        .then(function(resp) {
+          try { return resp.json(); } catch(e) { return resp.text(); }
+        })
+        .then(function(result) {
+          document.getElementById('generating').classList.remove('active');
+          if (typeof result === 'string') {
+            try { result = JSON.parse(result); } catch(e) { result = { success: false, error: 'Resposta inválida' }; }
+          }
+          
+          if (result.success) {
+            document.getElementById('sendModalTitle').textContent = 'IP Gerada!';
+            document.getElementById('sendModalBody').innerHTML = 
+              '<div style="text-align:center;color:#8e44ad;font-size:40px;margin:10px 0;">&#10003;</div>' +
+              '<p style="text-align:center;font-weight:600;">' + result.fileName + '</p>' +
+              '<p style="color:#6b6b80;font-size:13px;margin-top:8px;">Ficheiro guardado na pasta IP do Drive.</p>' +
+              '<div style="margin-top:12px;text-align:center;">' +
+              '<a href="' + (result.docUrl || '#') + '" target="_blank" style="color:#8e44ad;font-weight:600;">Abrir documento</a>' +
+              '</div>';
+            document.getElementById('sendModal').classList.add('active');
+          } else {
+            showToast('Erro: ' + (result.error || 'Desconhecido'));
+          }
+        })
+        .catch(function(err) {
+          document.getElementById('generating').classList.remove('active');
+          // Try iframe fallback
+          sendViaIframe(EMAIL_API_URL, payload, []);
+        });
+        
+      } catch (err) {
+        document.getElementById('generating').classList.remove('active');
+        showToast('Erro: ' + err.message);
+      }
+    }, 600);
+  });
 }
 
 // Init

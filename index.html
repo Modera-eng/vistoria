@@ -1958,7 +1958,8 @@ function generatePDF(shareMode) {
           assunto: subject,
           corpo: emailBody,
           filename: filename,
-          remetente: co.name
+          remetente: co.name,
+          certificado: d.nCertificado
         };
         
         fetch(EMAIL_API_URL, {
@@ -2027,7 +2028,7 @@ function generatePDF(shareMode) {
 }
 
 // ====== EMAIL VIA GOOGLE APPS SCRIPT ======
-var EMAIL_API_URL = 'https://script.google.com/macros/s/AKfycbygXTNnFmZFbkk7Alc2vbv1GNmzFVxi9dT2B6MIRZBq1WC3gf9diRn_EUqJSl_tZNXrVg/exec';
+var EMAIL_API_URL = 'https://script.google.com/macros/s/AKfycbzMiwojPMdovhT1FTzmDbxExKl39fZuySpxWU7uyE2YzqGyH_8YPiC4FlNtBl4Ax6zJ/exec';
 
 (function() {
   var params = new URLSearchParams(window.location.search);

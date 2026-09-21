@@ -901,8 +901,8 @@ function waitForJsPDF(callback, maxWait) {
 
     <div class="card">
       <div class="card-title"><span class="icon">🔒</span> Proteção de Dados (RGPD)</div>
-      <label class="doc-check-item" id="rgpdCheckItem" onclick="toggleRgpd(event)">
-        <input type="checkbox" id="rgpdAutorizo">
+      <label class="doc-check-item checked" id="rgpdCheckItem" onclick="toggleRgpd(event)">
+        <input type="checkbox" id="rgpdAutorizo" checked>
         <div class="doc-check-box">
           <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
@@ -2300,7 +2300,8 @@ function gerarIP() {
           dataSinistro: platformData.dataSinistro,
           dataPedido: platformData.dataPedido,
           dataPeritagem: platformData.dataPeritagem || savedDataPeritagem,
-          gestor: platformData.gestor
+          gestor: platformData.gestor,
+          emailPerito: d.emailPerito
         };
         
         document.querySelector('#generating p').textContent = 'A guardar no Drive...';
